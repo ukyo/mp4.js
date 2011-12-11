@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="../src/mp4.js"></script>
+    <script>
+      window.onload = function(){
+        var URL = window.URL || window.webkitURL;
+        //see: http://www.html5rocks.com/en/tutorials/file/dndfiles/
+        document.getElementById("files").addEventListener('change', function(e){
+          var files = e.target.files;
+          
+          for(var i = 0, f; f = files[i]; ++i){
+            var reader = new FileReader();
+            
+            reader.onload = (function(theFile){
+              return function(e){
+                var mp4 = new Mp4(e.target.result);
+                document.getElementById("result").innerText = JSON.stringify(mp4.parse(), null, 2);
+                location.href = URL.createObjectURL(mp4.extractAAC());
+              };
+            })(f);
+            
+            reader.readAsArrayBuffer(f);
+          }
+        }, false);
+      };
+    </script>
+  </head>
+  <body>
+    <input type="file" id="files" name="files[]" multiple/>
+    <pre id="result"></pre>
+  </body>
+</html>

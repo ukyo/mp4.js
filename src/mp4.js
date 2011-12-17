@@ -254,6 +254,8 @@ var fromCharCode = String.fromCharCode,
 		8000: 11
 	};
 
+Blob.prototype.slice = Blob.prototype.webkitSlice || Blob.prototype.mozSlice || Blob.prototype.slice;
+
 function Mp4(data){
 	var self = this,
 		bb = new BlobBuilder();
@@ -325,12 +327,12 @@ Mp4.prototype = {
 					bb.append(aacHeader.buffer);
 					
 					//AAC body.
-					bb.append(this.blob.webkitSlice(offset, offset += sampleSizeEntries[idx]));
+					bb.append(this.blob.slice(offset, offset += sampleSizeEntries[idx]));
 				}
 			}
 		}
 		
-		return bb.getBlob();
+		return bb.getBlob('audio/aac');
 	},
 	
 	parse: function(){

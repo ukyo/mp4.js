@@ -285,11 +285,12 @@ function Mp4(data){
 		this.blob = bb.getBlob();
 		this.cache.parse = this.parse();
 	} else if(isType(data, String)){
-		this.data = loadFileBuffer(data, function(bytes, offset, size){
-			self.complete = true;
-			bb.append(data);
+		loadFileBuffer(data, function(bytes, offset, size){
+			self.data = bytes;
+			bb.append(bytes);
 			self.blob = bb.getBlob();
 			self.cache.parse = self.parse();
+			self.complete = true;
 		});
 	}
 };

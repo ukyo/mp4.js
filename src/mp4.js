@@ -418,6 +418,76 @@ function loadFileBuffer(url, callback){
 	xhr.send();
 }
 
+/**
+ * @param {ArrayBuffer|Blob} data
+ * @param {function} callback
+ */
+function aacToM4a(data, callback){
+	if(isType(data, Blob)) {
+		var fr = new FileReader();
+		fr.onload = function(){
+			_aacToM4a(this.result, callback);
+		};
+		fr.readAsArrayBuffer(data);
+	} else if(isType(data, ArrayBuffer)){
+		_aacToM4a(data, callback);
+	}
+}
+
+/**
+ * @param {ArrayBuffer} data
+ * @param {function} callback
+ */
+function _aacToM4a(data, callback){
+	var ui8a = new Uint8Array(data),
+		offset = 0,
+		result;
+	
+	//TODO
+	
+	//build ftyp
+	
+	//count aac samples
+	
+	//build time to sample box(stts)
+	
+	//build sample to chunk box(stsc)
+	
+	//build sample size box(stsz)
+	
+	//build chunk offset box(stco)
+	
+	//build sample description box(stsd)
+	
+	//merge stsd, stts, stsc, stsz, stco to sample table box(stbl)
+	
+	//build data information box(dinf)
+	
+	//build sound media header box(smhd)
+	
+	//merge smhd, dinf, stbl to media information box(minf)
+	
+	//build media header box(mdhd)
+	
+	//build handler box(soun)
+	
+	//merge mdhd, soun, minf to mdia
+	
+	//build track header box(tkhd)
+	
+	//build object descriptor box(iods)
+	
+	//merge iods, tkhd, mdia to moov
+	
+	//build media data box(mdat)
+	
+	//build free space box(free)
+	
+	//merge ftyp, moov, mdat, free to result file
+	
+	callback(result);
+}
+
 return Mp4;
 
 })();

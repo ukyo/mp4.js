@@ -314,7 +314,7 @@ Mp4.prototype = {
 			});
 		} else {
 			if(tracks.mdia.hdlr.type === 'soun'){
-				audioTrack = track;
+				audioTrack = tracks;
 			} else {
 				throw 'This file does not have audio files.';
 			}

@@ -437,56 +437,345 @@ function aacToM4a(data, callback){
 /**
  * @param {ArrayBuffer} data
  * @param {function} callback
+ * 
+ * mp4 box structure:
+ *   ftyp
+ *   moov
+ *     iods
+ *     mvhd
+ *     trak
+ *       tkhd
+ *       mdia
+ *         mdhd
+ *         hdlr
+ *         minf
+ *           smhd
+ *           dinf
+ *           stbl
+ *             stsd
+ *             stts
+ *             stsc
+ *             stsz
+ *             stco
+ *   mdat
+ *   free
  */
 function _aacToM4a(data, callback){
 	var ui8a = new Uint8Array(data),
 		offset = 0,
-		result;
-	
-	//TODO
+		count = 0,
+		sampleSizes = [],
+		sampleOffsets = [],
+		result,
+		currentTime = Date.now(),
+		dataSize, chunk,
+		dataOffset, mdatOffset, stcoOffset,
+		dataBuilder = new BlobBuilder(),
+		i, j,
+		
+		ftyp, stts, stsc, stsz, stco, stsd, stbl, dinf,
+		smhd, minf, mdhd, hdlr, mdia, tkhd, iods, mdat,
+		free, mvhd, trak,
+		
+		//aac header
+		adts = {};
 	
 	//build ftyp
+	ftyp = new Uint8Array([
+		0, 0, 0, 0x1C, 0x66, 0x74, 0x79, 0x70,
+		0x4D, 0x34, 0x42, 0x20, 0, 0, 0, 0,
+		0x69, 0x73, 0x6F, 0x6D, 0x4D, 0x34, 0x41, 0x20,
+		0x6D, 0x70, 0x34, 0x32
+	]);
+	
+	function getFrameLength(offset) {
+		return ((ui8a[offset + 3] & 0x3) << 11) | (ui8a[offset + 4] << 3) | (ui8a[offset + 5] >> 5);
+	}
+	
+	function putUi32BE(ui8a, x, offset) {
+		ui8a[offset + 3] = x & 0xFF;
+		ui8a[offset + 2] = (x >> 8) & 0xFF;
+		ui8a[offset + 1] = (x >> 16) & 0xFF;
+		ui8a[offset] = (x >> 24);
+	}
+	
+	function putStr(ui8a, s, offset) {
+		for(var i = offset, end = i + s.length; i < end; ++i) {
+			ui8a[i] = s.charCodeAt(i);
+		}
+	}
+	
+	//aac header
+	adts.id = (ui8a[1] & 0x8) >> 3;
+	adts.profile = ui8a[2] >> 6;
+	adts.sampleRate = sampleRateTable[(ui8a[2] & 0x3C) >> 2];
+	adts.channelConf = ((ui8a[2] & 1) << 2) | (ui8a[3] >> 6);
+	adts.original = ui8a[3] & 0x20;
+	adts.bufferFullness = ((ui8a[5] & 0x1F) << 6) | (ui8a[6] >> 2);
 	
 	//count aac samples
+	while(offset < ui8a.length) {
+		sampleOffsets[count] = offset;
+		sampleSizes[count++] = getFrameLength(offset) - 7;//last number is aac header size.
+		offset += getFrameLength(offset);
+	}
+	console.log('number of aac samples: ' + count);
 	
 	//build time to sample box(stts)
+	stts = new Uint8Array(24);
+	stts[3] = 24;
+	putStr(stts, "stts", 4);
+	stts[15] = 1;
+	putUi32BE(stts, count, 16);
+	putUi32BE(stts, 1024, 20);
+	console.log("stts");
 	
 	//build sample to chunk box(stsc)
+	//4 + 4 + 8 + 12 * 2
+	stsc = new Uint8Array(40);
+	stsc[3] = 40;
+	putStr(stsc, "stsc", 4);
+	stsc[15] = 2;
+	putUi32BE(stsc, 1, 16); //first chunk
+	putUi32BE(stsc, 16, 20); //sample per chunk
+	putUi32BE(stsc, 1, 24); //sample description index?
+	chunk = (count >> 4) + 1;
+	putUi32BE(stsc, chunk, 28); //number of chunk
+	putUi32BE(stsc, count % 16, 32);
+	putUi32BE(stsc, 1, 36);
+	console.log("stsc");
 	
 	//build sample size box(stsz)
+	stsz = new Uint8Array(count * 4 + 20);
+	putUi32BE(stsz, count * 4 + 20, 0);
+	putStr(stsz, "stsz", 4);
+	putUi32BE(stsz, count, 16);
+	for(i = 0; i < count; ++i) {
+		putUi32BE(stsz, sampleSizes[i], i * 4 + 20);
+	}
+	console.log("stsz");
 	
 	//build chunk offset box(stco)
+	//4 + 4 + 8 + entryCount * 4
+	stco = new Uint8Array(16 + chunk * 4);
+	putUi32BE(stco, 16 + chunk * 4, 0);
+	putStr(stco, "stco", 4);
+	putUi32BE(stco, chunk, 12); //number of chunk
+	stcoOffset = 16 + 540 + stco.length + stsz.length; //start offset of aac data
+	for(i = 0; i < chunk; ++i) {
+		putUi32BE(stco, stcoOffset, i * 4 + 16);
+		for(j = 0; j < 16; ++j) {
+			stcoOffset += sampleSizes[i * 16 + j];
+		}
+	}
+	console.log("stco");
 	
 	//build sample description box(stsd)
+	stsd = new Uint8Array(54);
+	putUi32BE(stsd, 54, 0);
+	putStr(stsd, "stsd", 4);
+	stsd[15] = 1; //?
+	//mpeg audio sample description box
+	putUi32BE(stsd, 38, 16);
+	putStr(stsd, "mp4a", 20);
+	stsd[31] = 1; //?
+	stsd[41] = adts.channelConf; //channels;
+	stsd[43] = 16; //bit per sample
+	stsd[48] = adts.sampleRate >> 2;
+	stsd[49] = adts.sampleRate & 0xFF;
+	console.log("stsd");
 	
 	//merge stsd, stts, stsc, stsz, stco to sample table box(stbl)
+	stbl = new Uint8Array(
+		stsd.length +
+		stts.length +
+		stsc.length +
+		stsz.length +
+		stco.length + 8
+	);
+	putUi32BE(stbl, stbl.length, 0);
+	putStr(stbl, "stbl", 4);
+	stbl.set(stsd, 8);
+	stbl.set(stts, stsd.length + 8);
+	stbl.set(stsc, stsd.length + stts.length + 8);
+	stbl.set(stsz, stsd.length + stts.length + stsc.length + 8);
+	stbl.set(stco, stsd.length + stts.length + stsc.length + stsz.length + 8);
+	console.log("stbl");
 	
 	//build data information box(dinf)
+	dinf = new Uint8Array(36);
+	putUi32BE(dinf, 36, 0);
+	putStr(dinf, "dinf", 4);
+	//dref
+	putUi32BE(dinf, 28, 8);
+	putStr(dinf, "dref", 12);
+	dinf[19] = 1;
+	dinf[23] = 12;
+	putStr(dinf, "url ", 24);
+	dinf[35] = 1;
+	console.log("dinf");
 	
 	//build sound media header box(smhd)
+	smhd = new Uint8Array(16);
+	putUi32BE(smhd, 16, 0);
+	putStr(smhd, "smhd", 4);
+	console.log("smhd");
 	
 	//merge smhd, dinf, stbl to media information box(minf)
+	minf = new Uint8Array(
+		smhd.length +
+		dinf.length +
+		stbl.length + 8
+	);
+	putUi32BE(minf, minf.length, 0);
+	putStr(minf, "minf", 4);
+	minf.set(smhd, 8);
+	minf.set(dinf, smhd.length + 8);
+	minf.set(stbl, smhd.length + dinf.length + 8);
+	console.log("minf");
 	
 	//build media header box(mdhd)
+	mdhd = new Uint8Array(32);
+	putUi32BE(mdhd, 32, 0);
+	putStr(mdhd, "mdhd", 4);
+	putUi32BE(mdhd, currentTime, 12); //creation time
+	putUi32BE(mdhd, currentTime, 16); //modification time
+	putUi32BE(mdhd, adts.sampleRate, 20); //sample rate
+	putUi32BE(mdhd, count * 1024, 24) //duration
+	putUi32BE(mdhd, 0x55C40000, 28);
+	console.log("mdhd");
 	
-	//build handler box(soun)
+	//build handler box(hdlr)
+	hdlr = new Uint8Array(41);
+	putStr(hdlr, "hdlr", 4);
+	putStr(hdlr, "soun", 12);
+	putStr(hdlr, "JS Audio Handler", 24);
+	console.log("hdlr");
 	
 	//merge mdhd, soun, minf to mdia
+	mdia = new Uint8Array(
+		mdhd.length +
+		hdlr.length +
+		minf.length + 8
+	);
+	putUi32BE(mdia, mdia.length, 0);
+	putStr(mdia, "mdia", 4);
+	mdia.set(mdhd, 8);
+	mdia.set(hdlr, mdhd.length + 8);
+	mdia.set(minf, mdhd.length + hdlr.length + 8);
+	console.log("mdia");
 	
 	//build track header box(tkhd)
+	tkhd = new Uint8Array(92);
+	putUi32BE(tkhd, 92, 0);
+	putStr(tkhd, "tkhd", 4);
+	tkhd[7] = 1; //flag?
+	putUi32BE(tkhd, currentTime, 8); //creation time
+	putUi32BE(tkhd, currentTime, 12); //modification time
+	putUi32BE(tkhd, 1, 16); //track id
+	putUi32BE(tkhd, ~~(count * 1024 * 600 / adts.sampleRate), 24); //duration
+	tkhd[40] = 1; //?
+	tkhd[45] = 1; //?
+	tkhd[61] = 1; //?
+	tkhd[76] = 0x40; //?
+	console.log("tkhd");
 	
 	//build object descriptor box(iods)
+	iods = new Uint8Array(21);
+	putUi32BE(iods, 21, 0);
+	putStr(iods, "iods", 4);
+	putUi32BE(iods, 0x1007004F, 12); //?
+	iods[16] = 0xFF;
+	iods[17] = 0xFF;
+	iods[18] = 0x29;
+	iods[19] = 0xFF;
+	iods[20] = 0xFF;
+	console.log("iods");
 	
-	//merge iods, tkhd, mdia to moov
+	//merge tkhd, mdia to trak
+	trak = new Uint8Array(
+		tkhd.length +
+		mdia.length + 8
+	);
+	putUi32BE(trak, trak.length, 0);
+	putStr(trak, "trak", 4);
+	trak.set(tkhd, 8);
+	trak.set(mdia, tkhd.length + 8);
+	console.log("trak");
+	
+	//build movie header box(mvhd)
+	mvhd = new Uint8Array(108);
+	putUi32BE(mvhd, 108, 0);
+	putStr(mvhd, "mvhd", 4);
+	putUi32BE(mvhd, currentTime, 12); //creation time
+	putUi32BE(mvhd, currentTime, 16); //modification time
+	putUi32BE(mvhd, 600, 20); //time scale
+	putUi32BE(mvhd, ~~(count * 1024 * 600 / adts.sampleRate), 24); //duration
+	mvhd[29] = 1;
+	mvhd[32] = 1;
+	mvhd[45] = 1;
+	mvhd[61] = 1;
+	mvhd[76] = 0x40;
+	mvhd[107] = 2; //?
+	console.log("mvhd");
+	
+	//merge mvhd, iods, trak to moov
+	moov = new Uint8Array(
+		mvhd.length +
+		iods.length +
+		trak.length + 8
+	);
+	putUi32BE(moov, moov.length, 0);
+	putStr(moov, "moov", 4);
+	moov.set(mvhd, 8);
+	moov.set(iods, mvhd.length + 8);
+	moov.set(trak, mvhd.length + iods.length + 8);
+	console.log("moov");
 	
 	//build media data box(mdat)
+	dataSize = 0;
+	for(i = 0, n = sampleSizes.length; i < n; ++i) {
+		dataSize += sampleSizes[i];
+	}
+	console.log(dataSize + 8);
+	mdat = new Uint8Array(dataSize+8);
+	console.log("hoge");
+	putUi32BE(mdat, mdat.length, 0);
+	putStr(mdat, "mdat", 4);
+	dataOffset = 0;
+	mdatOffset = 8;
+	for(var i = 0; i < count; ++i) {
+		dataOffset += sampleOffsets[i];
+		mdat.set(ui8a.subarray(dataOffset + 7, dataOffset + sampleSizes[i] + 7), mdatOffset);
+		mdatOffset += sampleSizes[i];
+	}
+	console.log("mdat");
 	
 	//build free space box(free)
+	free = new Uint8Array(33);
+	putUi32BE(free, 33, 4);
+	putStr(free, "free", 4);
+	putStr(free, "m4a produced with mp4.js", 8);
+	console.log("free");
 	
 	//merge ftyp, moov, mdat, free to result file
+	result = new Uint8Array(
+		ftyp.length +
+		moov.length +
+		mdat.length +
+		free.length
+	);
+	result.set(ftyp, 0);
+	result.set(moov, ftyp.length);
+	result.set(mdat, ftyp.length + moov.length);
+	result.set(free, ftyp.length + moov.length + mdat.length);
+	console.log("done!");
 	
 	callback(result);
 }
+
+Mp4.aacToMp4 = aacToM4a;
+Mp4.load = loadFileBuffer;
 
 return Mp4;
 

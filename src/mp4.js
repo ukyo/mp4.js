@@ -268,27 +268,36 @@ var fromCharCode = String.fromCharCode,
 		12000: 9,
 		11025: 10,
 		8000: 11
-	};
+	},
+	sampleRateTableReverse = [
+		96000,
+		88200,
+		64000,
+		48000,
+		44100,
+		32000,
+		24000,
+		22050,
+		16000,
+		12000,
+		11025,
+		8000
+	];
 
 Blob.prototype.slice = Blob.prototype.webkitSlice || Blob.prototype.mozSlice || Blob.prototype.slice;
 
 function Mp4(data){
-	var self = this,
-		bb = new BlobBuilder();
+	var self = this;
 	
 	this.complete = false;
 	this.cache = {};
 	
 	if(isType(data, ArrayBuffer)){
 		this.data = data;
-		bb.append(data);
-		this.blob = bb.getBlob();
 		this.cache.parse = this.parse();
 	} else if(isType(data, String)){
 		loadFileBuffer(data, function(bytes, offset, size){
 			self.data = bytes;
-			bb.append(bytes);
-			self.blob = bb.getBlob();
 			self.cache.parse = self.parse();
 			self.complete = true;
 		});
@@ -301,7 +310,8 @@ Mp4.prototype = {
 		var tree = this.parse(),
 			tracks = tree.moov.trak,
 			audioTrack, mp4a, sampleToChunkEntries, sampleSizeEntries, chunkEntries,
-			i, j, k, n, m, l, fileSize, idx,
+			i, j, k, n, m, l, fileSize, idx,　result,
+			resultOffset = 0,
 			offset = 0,
 			bb = new BlobBuilder(),
 			aacHeader = new Uint8Array(new ArrayBuffer(7));
@@ -325,6 +335,7 @@ Mp4.prototype = {
 		sampleSizeEntries = audioTrack.mdia.minf.stbl.stsz.body;
 		chunkEntries = audioTrack.mdia.minf.stbl.stco.body;
 		
+		result = new Uint8Array(sampleSizeEntries.length * 4 + sampleSizeEntries.reduce(function(a, b){return a + b}));
 		aacHeader[0] = 0xFF;
 		aacHeader[1] = 0xF9;
 		aacHeader[2] = 0x40 | (sampleRateTable[mp4a.sampleRate] << 2) | (mp4a.channels >> 2);
@@ -341,15 +352,25 @@ Mp4.prototype = {
 					aacHeader[3] = (mp4a.channels << 6) | (fileSize >> 11);
 					aacHeader[4] = fileSize >> 3;
 					aacHeader[5] = (fileSize << 5) | (0x7ff >> 6);
-					bb.append(aacHeader.buffer);
+					
+					result.set(aacHeader, resultOffset);
+					resultOffset += 7;
+					result.set(data.subarray(offset, offset += sampleSizeEntries[idx]), resultOffset);
+					resultOffset += sampleSizeEntries[idx];
+					//bb.append(aacHeader.buffer);
 					
 					//AAC body.
-					bb.append(this.blob.slice(offset, offset += sampleSizeEntries[idx]));
+					//bb.append(this.blob.slice(offset, offset += sampleSizeEntries[idx]));
 				}
 			}
 		}
-		
-		return bb.getBlob('audio/aac');
+		return result.buffer;
+	},
+	
+	extractAACAsBlob: function(){
+		var bb = new BlobBuilder();
+		bb.append(this.extractAAC());
+		return bb.getBlob("audio/aac");
 	},
 	
 	parse: function(){
@@ -419,24 +440,8 @@ function loadFileBuffer(url, callback){
 }
 
 /**
- * @param {ArrayBuffer|Blob} data
- * @param {function} callback
- */
-function aacToM4a(data, callback){
-	if(isType(data, Blob)) {
-		var fr = new FileReader();
-		fr.onload = function(){
-			_aacToM4a(this.result, callback);
-		};
-		fr.readAsArrayBuffer(data);
-	} else if(isType(data, ArrayBuffer)){
-		_aacToM4a(data, callback);
-	}
-}
-
-/**
  * @param {ArrayBuffer} data
- * @param {function} callback
+ * @return {ArrayBuffer}
  * 
  * mp4 box structure:
  *   ftyp
@@ -460,16 +465,19 @@ function aacToM4a(data, callback){
  *   mdat
  *   free
  */
-function _aacToM4a(data, callback){
+function aacToM4a(data){
 	var ui8a = new Uint8Array(data),
 		offset = 0,
 		count = 0,
+		samplesPerChunk = 1318,
 		sampleSizes = [],
 		sampleOffsets = [],
 		result,
 		currentTime = Date.now(),
-		dataSize, chunk,
+		dataSize, chunkIndex,
 		dataOffset, mdatOffset, stcoOffset,
+		mp4a, slConfigDescr, decConfigDescr, esDescr, decSpecificInfo,
+		esds,
 		dataBuilder = new BlobBuilder(),
 		i, j,
 		
@@ -480,35 +488,14 @@ function _aacToM4a(data, callback){
 		//aac header
 		adts = {};
 	
-	//build ftyp
-	ftyp = new Uint8Array([
-		0, 0, 0, 0x1C, 0x66, 0x74, 0x79, 0x70,
-		0x4D, 0x34, 0x42, 0x20, 0, 0, 0, 0,
-		0x69, 0x73, 0x6F, 0x6D, 0x4D, 0x34, 0x41, 0x20,
-		0x6D, 0x70, 0x34, 0x32
-	]);
-	
 	function getFrameLength(offset) {
 		return ((ui8a[offset + 3] & 0x3) << 11) | (ui8a[offset + 4] << 3) | (ui8a[offset + 5] >> 5);
-	}
-	
-	function putUi32BE(ui8a, x, offset) {
-		ui8a[offset + 3] = x & 0xFF;
-		ui8a[offset + 2] = (x >> 8) & 0xFF;
-		ui8a[offset + 1] = (x >> 16) & 0xFF;
-		ui8a[offset] = (x >> 24);
-	}
-	
-	function putStr(ui8a, s, offset) {
-		for(var i = offset, end = i + s.length; i < end; ++i) {
-			ui8a[i] = s.charCodeAt(i);
-		}
 	}
 	
 	//aac header
 	adts.id = (ui8a[1] & 0x8) >> 3;
 	adts.profile = ui8a[2] >> 6;
-	adts.sampleRate = sampleRateTable[(ui8a[2] & 0x3C) >> 2];
+	adts.sampleRate = sampleRateTableReverse[(ui8a[2] & 0x3C) >> 2];
 	adts.channelConf = ((ui8a[2] & 1) << 2) | (ui8a[3] >> 6);
 	adts.original = ui8a[3] & 0x20;
 	adts.bufferFullness = ((ui8a[5] & 0x1F) << 6) | (ui8a[6] >> 2);
@@ -519,246 +506,67 @@ function _aacToM4a(data, callback){
 		sampleSizes[count++] = getFrameLength(offset) - 7;//last number is aac header size.
 		offset += getFrameLength(offset);
 	}
-	console.log('number of aac samples: ' + count);
 	
-	//build time to sample box(stts)
-	stts = new Uint8Array(24);
-	stts[3] = 24;
-	putStr(stts, "stts", 4);
-	stts[15] = 1;
-	putUi32BE(stts, count, 16);
-	putUi32BE(stts, 1024, 20);
-	console.log("stts");
+	decSpecificInfo = createDecoderSpecificInfo("\x12\x10");
+	decConfigDescr = createDecodeConfigDescriptor(0x67, 0x05, 0, 0, 0, 0, [decSpecificInfo]);
+	slConfigDescr = createSLConfigDescriptor(2);
+	esDescr = createESDescriptor(0, 0, null, null, decConfigDescr, slConfigDescr, []);
+	esds = createEsdsBox(esDescr);
+	mp4a = createMp4aBox(1, adts.sampleRate, esds);
 	
-	//build sample to chunk box(stsc)
-	//4 + 4 + 8 + 12 * 2
-	stsc = new Uint8Array(40);
-	stsc[3] = 40;
-	putStr(stsc, "stsc", 4);
-	stsc[15] = 2;
-	putUi32BE(stsc, 1, 16); //first chunk
-	putUi32BE(stsc, 16, 20); //sample per chunk
-	putUi32BE(stsc, 1, 24); //sample description index?
-	chunk = (count >> 4) + 1;
-	putUi32BE(stsc, chunk, 28); //number of chunk
-	putUi32BE(stsc, count % 16, 32);
-	putUi32BE(stsc, 1, 36);
-	console.log("stsc");
+	ftyp = createFtypBox("M4A ", "isom", "mp42");
+	stts = createSttsBox([{count: count, duration: 1024}]);
+	stsc = createStscBox(count, samplesPerChunk);
+	stsz = createStszBox(0, sampleSizes);
+	stsd = createStsdBox(mp4a);
+	dinf = createDinfBox(createUrlBox(null, 1));
+	smhd = createBox(16, "smhd");
+	mdhd = createMdhdBox(currentTime, currentTime, adts.sampleRate, count * 1024);
+	hdlr = createHdlrBox("soun", "GPAC ISO Audio Handler");
+	tkhd = createTkhdBox(currentTime, currentTime, 1, ~~(count * 1024 * 600 / adts.sampleRate));
+	iods = createIodsBox(0xFF, 0xFF, 0x29, 0xFF, 0xFF);
+	mvhd = createMvhdBox(currentTime, currentTime, 600, ~~(count * 1024 * 600 / adts.sampleRate), 2);
 	
-	//build sample size box(stsz)
-	stsz = new Uint8Array(count * 4 + 20);
-	putUi32BE(stsz, count * 4 + 20, 0);
-	putStr(stsz, "stsz", 4);
-	putUi32BE(stsz, count, 16);
-	for(i = 0; i < count; ++i) {
-		putUi32BE(stsz, sampleSizes[i], i * 4 + 20);
-	}
-	console.log("stsz");
-	
-	//build chunk offset box(stco)
-	//4 + 4 + 8 + entryCount * 4
-	stco = new Uint8Array(16 + chunk * 4);
-	putUi32BE(stco, 16 + chunk * 4, 0);
-	putStr(stco, "stco", 4);
-	putUi32BE(stco, chunk, 12); //number of chunk
-	stcoOffset = 16 + 540 + stco.length + stsz.length; //start offset of aac data
-	for(i = 0; i < chunk; ++i) {
-		putUi32BE(stco, stcoOffset, i * 4 + 16);
-		for(j = 0; j < 16; ++j) {
-			stcoOffset += sampleSizes[i * 16 + j];
-		}
-	}
-	console.log("stco");
-	
-	//build sample description box(stsd)
-	stsd = new Uint8Array(54);
-	putUi32BE(stsd, 54, 0);
-	putStr(stsd, "stsd", 4);
-	stsd[15] = 1; //?
-	//mpeg audio sample description box
-	putUi32BE(stsd, 38, 16);
-	putStr(stsd, "mp4a", 20);
-	stsd[31] = 1; //?
-	stsd[41] = adts.channelConf; //channels;
-	stsd[43] = 16; //bit per sample
-	stsd[48] = adts.sampleRate >> 2;
-	stsd[49] = adts.sampleRate & 0xFF;
-	console.log("stsd");
-	
-	//merge stsd, stts, stsc, stsz, stco to sample table box(stbl)
-	stbl = new Uint8Array(
-		stsd.length +
+	dataStart =
+		ftyp.length +
 		stts.length +
 		stsc.length +
 		stsz.length +
-		stco.length + 8
-	);
-	putUi32BE(stbl, stbl.length, 0);
-	putStr(stbl, "stbl", 4);
-	stbl.set(stsd, 8);
-	stbl.set(stts, stsd.length + 8);
-	stbl.set(stsc, stsd.length + stts.length + 8);
-	stbl.set(stsz, stsd.length + stts.length + stsc.length + 8);
-	stbl.set(stco, stsd.length + stts.length + stsc.length + stsz.length + 8);
-	console.log("stbl");
-	
-	//build data information box(dinf)
-	dinf = new Uint8Array(36);
-	putUi32BE(dinf, 36, 0);
-	putStr(dinf, "dinf", 4);
-	//dref
-	putUi32BE(dinf, 28, 8);
-	putStr(dinf, "dref", 12);
-	dinf[19] = 1;
-	dinf[23] = 12;
-	putStr(dinf, "url ", 24);
-	dinf[35] = 1;
-	console.log("dinf");
-	
-	//build sound media header box(smhd)
-	smhd = new Uint8Array(16);
-	putUi32BE(smhd, 16, 0);
-	putStr(smhd, "smhd", 4);
-	console.log("smhd");
-	
-	//merge smhd, dinf, stbl to media information box(minf)
-	minf = new Uint8Array(
-		smhd.length +
+		stsd.length +
 		dinf.length +
-		stbl.length + 8
-	);
-	putUi32BE(minf, minf.length, 0);
-	putStr(minf, "minf", 4);
-	minf.set(smhd, 8);
-	minf.set(dinf, smhd.length + 8);
-	minf.set(stbl, smhd.length + dinf.length + 8);
-	console.log("minf");
-	
-	//build media header box(mdhd)
-	mdhd = new Uint8Array(32);
-	putUi32BE(mdhd, 32, 0);
-	putStr(mdhd, "mdhd", 4);
-	putUi32BE(mdhd, currentTime, 12); //creation time
-	putUi32BE(mdhd, currentTime, 16); //modification time
-	putUi32BE(mdhd, adts.sampleRate, 20); //sample rate
-	putUi32BE(mdhd, count * 1024, 24) //duration
-	putUi32BE(mdhd, 0x55C40000, 28);
-	console.log("mdhd");
-	
-	//build handler box(hdlr)
-	hdlr = new Uint8Array(41);
-	putStr(hdlr, "hdlr", 4);
-	putStr(hdlr, "soun", 12);
-	putStr(hdlr, "JS Audio Handler", 24);
-	console.log("hdlr");
-	
-	//merge mdhd, soun, minf to mdia
-	mdia = new Uint8Array(
+		smhd.length +
 		mdhd.length +
 		hdlr.length +
-		minf.length + 8
-	);
-	putUi32BE(mdia, mdia.length, 0);
-	putStr(mdia, "mdia", 4);
-	mdia.set(mdhd, 8);
-	mdia.set(hdlr, mdhd.length + 8);
-	mdia.set(minf, mdhd.length + hdlr.length + 8);
-	console.log("mdia");
-	
-	//build track header box(tkhd)
-	tkhd = new Uint8Array(92);
-	putUi32BE(tkhd, 92, 0);
-	putStr(tkhd, "tkhd", 4);
-	tkhd[7] = 1; //flag?
-	putUi32BE(tkhd, currentTime, 8); //creation time
-	putUi32BE(tkhd, currentTime, 12); //modification time
-	putUi32BE(tkhd, 1, 16); //track id
-	putUi32BE(tkhd, ~~(count * 1024 * 600 / adts.sampleRate), 24); //duration
-	tkhd[40] = 1; //?
-	tkhd[45] = 1; //?
-	tkhd[61] = 1; //?
-	tkhd[76] = 0x40; //?
-	console.log("tkhd");
-	
-	//build object descriptor box(iods)
-	iods = new Uint8Array(21);
-	putUi32BE(iods, 21, 0);
-	putStr(iods, "iods", 4);
-	putUi32BE(iods, 0x1007004F, 12); //?
-	iods[16] = 0xFF;
-	iods[17] = 0xFF;
-	iods[18] = 0x29;
-	iods[19] = 0xFF;
-	iods[20] = 0xFF;
-	console.log("iods");
-	
-	//merge tkhd, mdia to trak
-	trak = new Uint8Array(
 		tkhd.length +
-		mdia.length + 8
-	);
-	putUi32BE(trak, trak.length, 0);
-	putStr(trak, "trak", 4);
-	trak.set(tkhd, 8);
-	trak.set(mdia, tkhd.length + 8);
-	console.log("trak");
-	
-	//build movie header box(mvhd)
-	mvhd = new Uint8Array(108);
-	putUi32BE(mvhd, 108, 0);
-	putStr(mvhd, "mvhd", 4);
-	putUi32BE(mvhd, currentTime, 12); //creation time
-	putUi32BE(mvhd, currentTime, 16); //modification time
-	putUi32BE(mvhd, 600, 20); //time scale
-	putUi32BE(mvhd, ~~(count * 1024 * 600 / adts.sampleRate), 24); //duration
-	mvhd[29] = 1;
-	mvhd[32] = 1;
-	mvhd[45] = 1;
-	mvhd[61] = 1;
-	mvhd[76] = 0x40;
-	mvhd[107] = 2; //?
-	console.log("mvhd");
-	
-	//merge mvhd, iods, trak to moov
-	moov = new Uint8Array(
-		mvhd.length +
 		iods.length +
-		trak.length + 8
-	);
-	putUi32BE(moov, moov.length, 0);
-	putStr(moov, "moov", 4);
-	moov.set(mvhd, 8);
-	moov.set(iods, mvhd.length + 8);
-	moov.set(trak, mvhd.length + iods.length + 8);
-	console.log("moov");
+		mvhd.length;
+	dataStart += 8 * 6;
+	dataStart += (~~(sampleSizes.length / samplesPerChunk) + 1) * 4 + 16;
+	stco = createStcoBox(samplesPerChunk, sampleSizes, dataStart);
+	
+	stbl = concatBoxes("stbl", stsd, stts, stsc, stsz, stco);
+	minf = concatBoxes("minf", smhd, dinf, stbl);
+	mdia = concatBoxes("mdia", mdhd, hdlr, minf);
+	trak = concatBoxes("trak", tkhd, mdia);
+	moov = concatBoxes("moov", mvhd, iods, trak);
 	
 	//build media data box(mdat)
 	dataSize = 0;
-	for(i = 0, n = sampleSizes.length; i < n; ++i) {
+	for(i = 0; i < count; ++i) {
 		dataSize += sampleSizes[i];
 	}
-	console.log(dataSize + 8);
-	mdat = new Uint8Array(dataSize+8);
-	console.log("hoge");
-	putUi32BE(mdat, mdat.length, 0);
-	putStr(mdat, "mdat", 4);
+	mdat = createBox(dataSize + 8, "mdat");
 	dataOffset = 0;
 	mdatOffset = 8;
-	for(var i = 0; i < count; ++i) {
-		dataOffset += sampleOffsets[i];
-		mdat.set(ui8a.subarray(dataOffset + 7, dataOffset + sampleSizes[i] + 7), mdatOffset);
+	for(i = 0; i < count; ++i) {
+		dataOffset = sampleOffsets[i];
+		mdat.set(ui8a.subarray(dataOffset + 7, dataOffset + 7 + sampleSizes[i]), mdatOffset);
 		mdatOffset += sampleSizes[i];
 	}
 	console.log("mdat");
 	
-	//build free space box(free)
-	free = new Uint8Array(33);
-	putUi32BE(free, 33, 4);
-	putStr(free, "free", 4);
-	putStr(free, "m4a produced with mp4.js", 8);
-	console.log("free");
+	free = createFreeBox("IsoMedia File Produced with GPAC 0.4.4");
 	
-	//merge ftyp, moov, mdat, free to result file
 	result = new Uint8Array(
 		ftyp.length +
 		moov.length +
@@ -771,7 +579,593 @@ function _aacToM4a(data, callback){
 	result.set(free, ftyp.length + moov.length + mdat.length);
 	console.log("done!");
 	
-	callback(result);
+	return result.buffer;
+}
+
+/**
+ * @param {Uint8Array} arr
+ * @param {number} x
+ * @param {number} offset
+ */
+function putUi16(arr, x, offset){
+	arr[offset + 1] = x & 0xFF;
+	arr[offset] = x >> 8;
+}
+
+/**
+ * @param {Uint8Array} arr
+ * @param {number} x
+ * @param {number} offset
+ */
+function putUi24(arr, x, offset){
+	arr[offset + 2] = x & 0xFF;
+	arr[offset + 1] = (x >> 8) & 0xFF;
+	arr[offset] = x >> 16;
+}
+
+/**
+ * @param {Uint8Array} arr
+ * @param {number} x
+ * @param {number} offset
+ */
+function putUi32(arr, x, offset){
+	arr[offset + 3] = x & 0xFF;
+	arr[offset + 2] = (x >> 8) & 0xFF;
+	arr[offset + 1] = (x >> 16) & 0xFF;
+	arr[offset] = x >> 24;
+}
+
+/**
+ * @param {Uint8Array} arr
+ * @param {string} str
+ * @param {number} offset
+ */
+function putStr(arr, str, offset){
+	for(var i = 0, n = str.length; i < n; ++i) {
+		arr[i + offset] = str.charCodeAt(i);
+	}
+}
+
+/**
+ * Create a box.
+ * @param {number} size
+ * @param {string} type
+ * @return {Uint8Array}
+ */
+function createBox(size, type){
+	var box = new Uint8Array(size);
+	putUi32(box, size, 0);
+	putStr(box, type, 4);
+	return box;
+}
+
+/**
+ * Create a full box.
+ * @param {number} size
+ * @param {string} type
+ * @param {number} version
+ * @param {number} flags
+ * @return {Uint8Array}
+ */
+function createFullBox(size, type, version, flags){
+	var box = createBox(size, type);
+	putUi16(box, version, 8);
+	putUi16(box, flags, 10);
+	return box;
+}
+
+/**
+ * Create a audio sample entry box (mp4a).
+ * @param {number} dataReferenceIndex
+ * @param {number} timeScale
+ * @param {Uint8Array} esdsBox
+ * @return {Uint8Array}
+ */
+function createMp4aBox(dataReferenceIndex, timeScale, esdsBox){
+	var size = 36 + esdsBox.length,
+		box = createBox(size, "mp4a");
+	putUi16(box, dataReferenceIndex, 14);
+	putUi16(box, 2, 24);
+	putUi16(box, 16, 26);
+	putUi16(box, timeScale, 32);
+	box.set(esdsBox, 36);
+	return box;
+}
+
+/**
+ * Create a element stream descriptor box (esds).
+ * @param {Uint8Array} esDescr
+ * @return {Uint8Array}
+ * TODO
+ */
+function createEsdsBox(esDescr){
+	var box = createFullBox(12 + esDescr.length, "esds", 0, 0);
+	box.set(esDescr, 12);
+	return box;
+}
+
+/**
+ * Create a base descriptor.
+ * @param {number} size
+ * @param {number} tag
+ * @return {Uint8Array}
+ */
+function createBaseDescriptor(size, tag){
+	var descriptor = new Uint8Array(size + 2);
+	descriptor[0] = tag;
+	descriptor[1] = size;
+	return descriptor;
+}
+
+/**
+ * Create a ES_Descriptor.
+ * @param {number} esId
+ * @param {number} streamPriority
+ * @param {number} dependsOnEsId
+ * @param {string} url
+ * @param {Uint8Array} decConfigDescr
+ * @param {Uint8Array} slConfigDescr
+ * @param {Array} subDescriptors
+ * @return {Uint8Array}
+ */
+function createESDescriptor(esId, streamPriority, dependsOnEsId, url, decConfigDescr, slConfigDescr, subDescriptors){
+	var urlFlag = typeof url === "string" ? 1 : 0,
+		streamDependenceFlag = dependsOnEsId != null ? 1 : 0,
+		size = 3,
+		offset = 2,
+		i, n, descr;
+	
+	size += streamDependenceFlag ? 2 : 0;
+	size += urlFlag ? (url.length + 1) : 0;
+	size += decConfigDescr.length;
+	size += slConfigDescr.length;
+	for(i = 0, n = subDescriptors.length; i < n; ++i) size += subDescriptors[i].length;
+	descr = createBaseDescriptor(size, 0x03);
+	putUi16(descr, esId, offset);
+	offset += 2;
+	descr[offset++] = (streamDependenceFlag << 7) | (urlFlag << 6) | streamPriority;
+	if(streamDependenceFlag) {
+		putUi16(descr, dependsOnEsId, offset);
+		offset += 2;
+	}
+	if(urlFlag) {
+		descr[offset++] = url.length;
+		putStr(descr, url, offset);
+		offset += url.length;
+	}
+	descr.set(decConfigDescr, offset);
+	offset += decConfigDescr.length;
+	descr.set(slConfigDescr, offset);
+	offset += slConfigDescr.length;
+	for(i = 0; i < n; ++i) {
+		descr.set(subDescriptors[i], offset);
+		offset += subDescriptors[i].length;
+	}
+	return descr;
+}
+
+/**
+ * Create a decode config descriptor.
+ * @param {number} objectTypeIndication refer http://www.mp4ra.org/object.html
+ * @param {number} streamType
+ * @param {number} upStream
+ * @param {number} bufferSizeDB
+ * @param {number} maxBitrate
+ * @param {number} avgBitrate
+ * @param {Array} subDescriptors
+ * @return {Uint8Array}
+ */
+function createDecodeConfigDescriptor(objectTypeIndication, streamType, upStream, bufferSizeDB, maxBitrate, avgBitrate, subDescriptors){
+	var size = 13,
+		offset = 15,
+		descriptor, i, n;
+	subDescriptors = subDescriptors || [];
+	
+	for(i = 0, n = subDescriptors.length; i < n; ++i) size += subDescriptors[i].length;
+	console.log("descr :"+ size);
+	descriptor = createBaseDescriptor(size, 0x04);
+	descriptor[2] = objectTypeIndication;
+	descriptor[3] = (streamType << 2) | (upStream << 1) | 1;
+	putUi24(descriptor, bufferSizeDB, 4);
+	putUi32(descriptor, maxBitrate, 7);
+	putUi32(descriptor, avgBitrate, 11);
+	for(i = 0; i < n; ++i) {
+		descriptor.set(subDescriptors[i], offset);
+		offset += subDescriptors[i].length;
+	}
+	return descriptor
+}
+
+/**
+ * Create a decoder specific infomation.
+ * @param {string} str
+ * @return {Uint8Array}
+ */
+function createDecoderSpecificInfo(str){
+	var descr = createBaseDescriptor(str.length, 0x05);
+	putStr(descr, str, 2);
+	return descr;
+}
+
+/**
+ * Create a SL_ConfigDescriptor.
+ * TODO mada tukuttenaiyo
+ * @param {number} predefined
+ * @return {Uint8Array}
+ */
+function createSLConfigDescriptor(predefined){
+	var descr = createBaseDescriptor(1, 0x06);
+	descr[2] = predefined;
+	return descr;
+}
+
+/**
+ * Create a track header box (tkhd).
+ * @param {number} creationTime
+ * @param {number} modificationTime
+ * @param {number} trackId
+ * @param {number} duration
+ * @param {boolean} isVisual
+ * @return {Uint8Array}
+ */
+function createTkhdBox(creationTime, modificationTime, trackId, duration, isVisual){
+	var box = createFullBox(92, "tkhd", 0, 1);
+	putUi32(box, creationTime, 12);
+	putUi32(box, modificationTime, 16);
+	putUi32(box, trackId, 20);
+	putUi32(box, duration, 28);
+	putUi16(box, !isVisual ? 0x0100 : 0, 44);
+	putUi32(box, 0x00010000, 48);
+	putUi32(box, 0x00010000, 64);
+	putUi32(box, 0x40000000, 80);
+	putUi32(box, isVisual ? 0x01400000 : 0, 84);
+	putUi32(box, isVisual ? 0x00F00000 : 0, 88);
+	return box;
+}
+
+/**
+ * Create a media header box (mdhd).
+ * @param {number} creationTime
+ * @param {number} modificationTime
+ * @param {number} timeScale
+ * @param {number} duration
+ * @return {Uint8Array}
+ */
+function createMdhdBox(creationTime, modificationTime, timeScale, duration){
+	var box = createFullBox(32, "mdhd", 0, 0);
+	putUi32(box, creationTime, 12);
+	putUi32(box, modificationTime, 16);
+	putUi32(box, timeScale, 20);
+	putUi32(box, duration, 24);
+	putUi16(box, 0x55C4, 28);
+	return box;
+}
+
+/**
+ * Create a handler box (hdlr).
+ * @param {string} handlerType
+ * @param {string} name
+ * @return {Uint8Array}
+ */
+function createHdlrBox(handlerType, name){
+	var box = createFullBox(12 + 4 + 4 + 12 + name.length + 1, "hdlr", 0, 0);
+	putStr(box, handlerType, 16);
+	putStr(box, name, 32);
+	return box;
+}
+
+/**
+ * Concat boxes
+ * @param {...Uint8Array} boxes
+ * @return {Uint8Array}
+ */
+function concatBoxes(boxes){
+	var args = Array.prototype.slice.call(arguments, 1),
+		type = arguments[0],
+		size = 8,
+		offset = 8,
+		i, n, box;
+	
+	for(i = 0, n = args.length; i < n; ++i) size += args[i].length;
+	box = createBox(size, type);
+	for(i = 0; i < n; ++i) {
+		box.set(args[i], offset);
+		offset += args[i].length;
+	}
+	return box;
+}
+
+/**
+ * Create a data entry url box (url ).
+ * @param {string} location
+ * @param {number} flags
+ * @return {Uint8Array}
+ */
+function createUrlBox(location, flags){
+	flags = typeof flags === "undefined" ? 1 : flags;
+	var len = typeof location === "string" ? location.length + 1 : 0;
+	var box = createFullBox(12 + len, "url ", 0, flags);
+	len && putUi16(box, location, 12);
+	return box;
+}
+
+/**
+ * Create a data entry urn box (urn ).
+ * @param {string} name
+ * @param {string} location
+ * @return {Uint8Array}
+ */
+function createUrnBox(name, location){
+	return createUrlBox(name + "\x00" + location, 0);
+}
+
+/**
+ * Create a data reference box (dref).
+ * @return {Uint8Array}
+ */
+function createDrefBox(){
+	var args = Array.prototype.slice.call(arguments, 0),
+		size = 16,
+		offset = 16,
+		i, n, box;
+	
+	for(i = 0, n = args.length; i < n; ++i) size += args[i].length;
+	box = createFullBox(size, "dref", 0, 0);
+	putUi32(box, 12, n);
+	for(i = 0; i < n; ++i) {
+		box.set(args[i], offset);
+		offset += args[i].length;
+	}
+	return box;
+}
+
+/**
+ * Create a sample size box (stsz).
+ * @param {number} sampleSize
+ * @param {Array} sampleSizeArr
+ * @return {Uint8Array}
+ */
+function createStszBox(sampleSize, sampleSizeArr){
+	var box = createFullBox(12 + 8 + (sampleSizeArr.length * 4), "stsz", 0, 0),
+		i, n;
+	
+	putUi32(box, sampleSize, 12);
+	putUi32(box, sampleSizeArr.length, 16);
+	if(!sampleSize) {
+		for(i = 0, n = sampleSizeArr.length; i < n; ++i) {
+			putUi32(box, sampleSizeArr[i], i * 4 + 20);
+		}
+	}
+	return box;
+}
+
+/**
+ * Create a moview header box (mvhd).
+ * @param {number} creationTime
+ * @param {number} modificationTime
+ * @param {number} timeScale
+ * @param {number} duration
+ * @param {number} nextTrackId
+ * @return {Uint8Array}
+ */
+function createMvhdBox(creationTime, modificationTime, timeScale, duration, nextTrackId){
+	var box = createFullBox(108, "mvhd", 0, 0);
+	putUi32(box, creationTime, 12);
+	putUi32(box, modificationTime, 16);
+	putUi32(box, timeScale, 20);
+	putUi32(box, duration, 24);
+	putUi32(box, 0x00010000, 28);
+	putUi16(box, 0x0100, 32);
+	putUi32(box, 0x00010000, 44);
+	putUi32(box, 0x00010000, 60);
+	putUi32(box, 0x40000000, 76);
+	putUi32(box, nextTrackId, 104);
+	return box;
+}
+
+/**
+ * Create a initial object descriptor box (iods).
+ * @param {number} odProfile
+ * @param {number} sceneProfile
+ * @param {number} audioProfile
+ * @param {number} visualProfile
+ * @param {number} graphicsProfile
+ * @return {Uint8Array}
+ */
+function createIodsBox(odProfile, sceneProfile, audioProfile, visualProfile, graphicsProfile){
+	var box = createFullBox(21, "iods", 0, 0);
+	putUi16(box, 0x1007, 12); //?
+	putUi16(box, 0x004F, 14);
+	box[16] = odProfile;
+	box[17] = sceneProfile;
+	box[18] = audioProfile;
+	box[19] = visualProfile;
+	box[20] = graphicsProfile;
+	return box;
+}
+
+/**
+ * @param {number} objectDescrId
+ * @param {number} includeInlineProfileLevelFlag
+ * @param {string} url
+ * @param {number} odProfile
+ * @param {number} sceneProfile
+ * @param {number} audioProfile
+ * @param {number} visualProfile
+ * @param {number} graphicsProfile
+ * @param {Array} subDescrs
+ * @param {Array} extDescrs
+ * @return {Uint8Array}
+ */
+function createInitialObjectDescriptor(objectDescrId, includeInlineProfileLevelFlag, url, odProfile, sceneProfile, audioProfile, visualProfile, graphicsProfile, subDescrs, extDescrs){
+	var urlFlag = typeof url === "string" ? 1 : 0,
+		size = 2, offset, descr, i, n;
+	
+	subDescrs = subDescrs != null ? [] : isType(subDescrs, Array) ? subDescr : [subDescr];
+	extDescrs = extDescrs != null ? [] : isType(extDescrs, Array) ? extDescr : [extDescr];
+	size += urlFlag ? url.length + 1 : 0;
+	offset = 4;
+	for(i = 0, n = extDescrs.length; i < n; ++i) size += extDescrs[i].length;
+	if(urlFlag) {
+		descr = createBaseDescriptor(size, 0x10);
+		descr[offset++] = url.length;
+		putStr(descr, url, offset);
+		offset += url.length;
+	} else {
+		for(i = 0, n = subDescrs.length; i < n; ++i) size += subDescrs[i].length;
+		descr = createBaseDescriptor(size, 0x10);
+		descr[offset++] = odProfile;
+		descr[offset++] = sceneProfile;
+		descr[offset++] = audioProfile;
+		descr[offset++] = visualProfile;
+		descr[offset++] = graphicsProfile;
+		for(i = 0; i < n; ++i) {
+			descr.set(subDescrs[i], offset);
+			offset += subDescrs[i].length;
+		}
+	}
+	putUi16(descr, (objectDescrId << 6) | (urlFlag << 5) | (includeInlineProfileLevelFlag << 4) | 0xF, 2);
+	for(i = 0, n = extDescrs.length; i < n; ++i) {
+		descr.set(extDescrs[i], offset);
+		offset += extDescrs[i].length;
+	}
+	return descr;
+}
+
+/**
+ * Create a data infomation box (dinf).
+ * @param {...Uint8Array} args
+ * @return {Uint8Array}
+ */
+function createDinfBox(){
+	var args = Array.prototype.slice.call(arguments, 0),
+		size = 16,
+		offset = 16,
+		i, n, dref, dinf;
+	
+	for(i = 0, n = args.length; i < n; ++i) size += args[i].length;
+	dref = createFullBox(size, "dref", 0, 0);
+	putUi32(dref, n, 12);
+	for(i = 0; i < n; ++i) {
+		dref.set(args[i], offset);
+		offset += args[i].length;
+	}
+	dinf = createBox(size + 8, "dinf");
+	dinf.set(dref, 8);
+	return dinf;
+}
+
+/**
+ * Create a sample description box (stsd).
+ * @param {...Uint8Array} sampleEntries
+ * @return {Uint8Array}
+ */
+function createStsdBox(sampleEntries){
+	var args = Array.prototype.slice.call(arguments, 0),
+		size = 16,
+		offset = 16,
+		i, n, box;
+	
+	for(i = 0, n = args.length; i < n; ++i) size += args[i].length;
+	box = createFullBox(size, "stsd", 0, 0);
+	putUi32(box, n, 12);
+	for(i = 0; i < n; ++i) {
+		box.set(args[i], offset);
+		offset += args[i].length;
+	}
+	return box;
+}
+
+/**
+ * Create a time to sample box (stts).
+ * @param {Array} entries
+ * @return {Uint8Array}
+ */
+function createSttsBox(entries){
+	var size = 16 + entries.length * 8,
+		box = createFullBox(size, "stts", 0, 0),
+		offset = 16,
+		i, n;
+	
+	putUi32(box, entries.length, 12);
+	for(i = 0, n = entries.length; i < n; ++i) {
+		putUi32(box, entries[i].count, offset);
+		putUi32(box, entries[i].duration, offset + 4);
+		offset += 8;
+	}
+	return box;
+}
+
+/**
+ * Create a sample to chunk box (stsc).
+ * @param {number} sampleCount
+ * @param {number} samplesPerChunk
+ * @return {Uint8Array}
+ */
+function createStscBox(sampleCount, samplesPerChunk){
+	var box = createFullBox(40, "stsc", 0, 0);
+	putUi32(box, 2, 12);
+	putUi32(box, 1, 16);
+	putUi32(box, samplesPerChunk, 20);
+	putUi32(box, 1, 24);
+	putUi32(box, ~~(sampleCount / samplesPerChunk) + 1, 28);
+	putUi32(box, sampleCount % samplesPerChunk, 32);
+	putUi32(box, 1, 36);
+	return box;
+}
+
+/**
+ * Create a chunk offset box (stco).
+ * @param {number} samplesPerChunk
+ * @param {Array} sampleSizes
+ * @param {number} dataStart
+ * @return {Uint8Array}
+ */
+function createStcoBox(samplesPerChunk, sampleSizes, dataStart){
+	var n = ~~(sampleSizes.length / samplesPerChunk) + 1,
+		box = createFullBox(16 + n * 4, "stco", 0, 0),
+		offset = dataStart,
+		i, j;
+	
+	putUi32(box, n, 12);
+	for(i = 0; i < n; ++i) {
+		putUi32(box, offset, i * 4 + 16);
+		for(j = 0; j < samplesPerChunk; ++j) {
+			offset += sampleSizes[i * 4 + j];
+		}
+	}
+	return box;
+}
+
+/**
+ * Create a free box (free).
+ * @param {string} str
+ * @return {Uint8Array}
+ */
+function createFreeBox(str){
+	var box = createFullBox(8 + str.length + 1, "free");
+	putStr(box, str, 8);
+	return box;
+}
+
+/**
+ * Create a file type box (ftyp).
+ * @param {string} main
+ * @param {...string} other 
+ * @return {Uint8Array}
+ */
+function createFtypBox(main, other){
+	var args = Array.prototype.slice.call(arguments, 0),
+		box = createBox(args.length * 4 + 16, "ftyp"),
+		offset = 16,
+		i, n;
+	
+	putStr(box, main, 8);
+	for(i = 0, n = args.length; i < n; ++i) {
+		putStr(box, args[i], offset);
+		offset += 4;
+	}
+	return box;
 }
 
 Mp4.aacToMp4 = aacToM4a;

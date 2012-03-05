@@ -348,7 +348,7 @@ mp4.Parser.prototype = {
 	 */
 	parse: function(){
 		if(this.cache.tree) return this.cache.tree;
-		return this.cashe.tree = getBox(this.bytes, -8, this.bytes.length);
+		return this.cache.tree = getBox(this.bytes, -8, this.bytes.length);
 	},
 	
 	/**
@@ -358,7 +358,7 @@ mp4.Parser.prototype = {
 		var tree = this.parse(),
 			tracks = tree.moov.trak,
 			audioTrack, mp4a, sampleToChunkEntries, sampleSizeEntries, chunkEntries,
-			i, j, k, n, m, l, fileSize, idx,　result,
+			i, j, k, n, m, l, fileSize, idx,result,
 			resultOffset = 0,
 			offset = 0,
 			aacHeader = new Uint8Array(new ArrayBuffer(7));

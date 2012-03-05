@@ -17,8 +17,8 @@
 
 						reader.onload = (function(theFile) {
 							return function(e) {
-								var parser = new mp4.Parser(e.target.result);
-								document.getElementById("result").innerText = JSON.stringify(mp4.parse(), null, 2);
+								parser = new mp4.Parser(e.target.result);
+								document.getElementById("result").innerText = JSON.stringify(parser.parse(), null, 2);
 								location.href = URL.createObjectURL(parser.extractAACAsBlob());
 							};
 						})(f);

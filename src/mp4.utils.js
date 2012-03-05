@@ -1,14 +1,44 @@
-(function(window, Mp4){
+/**
+ * @license Copyright 2012 - Syu Kato <ukyo.web@gmail.com>
+ * mp4.js
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
 
-var utils = {};
+var mp4 = mp4 || {};
+mp4.utils = mp4.utils || {};
+
+(function(window){
+
+var self = this;
 
 /**
  * @param {Object} obj
  * @param {Object} type
  * @return {boolean}
  */
-utils.isType = function(obj, type){
+this.isType = function(obj, type){
 	return obj != null ? obj.constructor == type : false;
+};
+
+/**
+ * @param {string} url
+ * @param {function} callback
+ */
+this.load = function(url, callback){
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', url);
+	xhr.responseType = 'arraybuffer';
+	xhr.onreadystatechange = function(){
+		if(xhr.readyState == 4) {
+			if(~~(xhr.status / 100) === 2 || xhr.status === 0) {
+				callback.call(xhr, xhr.response);
+			} else {
+				throw 'Error: ' + xhr.status;
+			}
+		}
+	};
+	xhr.send();
 };
 
 /**
@@ -16,7 +46,7 @@ utils.isType = function(obj, type){
  * @param {number} offset
  * @return {number}
  */
-utils.getUi16 = function(bytes, offset){
+this.getUi16 = function(bytes, offset){
 	return (bytes[offset] << 8) | (bytes[offset + 1]);
 };
 
@@ -25,7 +55,7 @@ utils.getUi16 = function(bytes, offset){
  * @param {number} offset
  * @return {number}
  */
-utils.getUi24 = function(bytes, offset){
+this.getUi24 = function(bytes, offset){
 	return (bytes[offset + 1] << 16) | (bytes[offset] << 8) | (bytes[offset + 1]);
 };
 
@@ -34,7 +64,7 @@ utils.getUi24 = function(bytes, offset){
  * @param {number} offset
  * @return {number}
  */
-utils.getUi32 = function(bytes, offset){
+this.getUi32 = function(bytes, offset){
 	return (bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3];
 };
 
@@ -46,7 +76,7 @@ utils.getUi32 = function(bytes, offset){
  * 
  * ascii only!
  */
-utils.getStr = function(bytes, len, offset){
+this.getStr = function(bytes, len, offset){
 	var a = [];
 	for(var i = 0; i < len; ++i) a[a.length] = bytes[offset + i];
 	return String.fromCharCode.apply(null, a);
@@ -57,7 +87,7 @@ utils.getStr = function(bytes, len, offset){
  * @param {number} x
  * @param {number} offset
  */
-utils.putUi16 = function(bytes, x, offset){
+this.putUi16 = function(bytes, x, offset){
 	bytes[offset + 1] = x & 0xFF;
 	bytes[offset] = x >> 8;
 };
@@ -67,7 +97,7 @@ utils.putUi16 = function(bytes, x, offset){
  * @param {number} x
  * @param {number} offset
  */
-utils.putUi24 = function(bytes, x, offset){
+this.putUi24 = function(bytes, x, offset){
 	bytes[offset + 2] = x & 0xFF;
 	bytes[offset + 1] = (x >> 8) & 0xFF;
 	bytes[offset] = x >> 16;
@@ -78,7 +108,7 @@ utils.putUi24 = function(bytes, x, offset){
  * @param {number} x
  * @param {number} offset
  */
-utils.putUi32 = function(bytes, x, offset){
+this.putUi32 = function(bytes, x, offset){
 	bytes[offset + 3] = x & 0xFF;
 	bytes[offset + 2] = (x >> 8) & 0xFF;
 	bytes[offset + 1] = (x >> 16) & 0xFF;
@@ -92,7 +122,7 @@ utils.putUi32 = function(bytes, x, offset){
  * 
  * ascii only!
  */
-utils.putStr = function(bytes, s, offset){
+this.putStr = function(bytes, s, offset){
 	for(var i = 0, n = s.length; i < n; ++i) bytes[i + offset] = s.charCodeAt(i);
 };
 
@@ -100,8 +130,8 @@ utils.putStr = function(bytes, s, offset){
  * @param {...(Uint8Array|int8Array)} byteArrays
  * @return {Uint8Array}
  */
-utils.concatByteArrays = function(byteArrays){
-	var byteArrays = utils.isType(byteArrays, Array) ? byteArrays : Array.prototype.slice.call(arguments, 0);
+this.concatByteArrays = function(byteArrays){
+	var byteArrays = self.isType(byteArrays, Array) ? byteArrays : Array.prototype.slice.call(arguments, 0),
 		size = 0,
 		offset = 0,
 		i, n, ret;
@@ -115,6 +145,4 @@ utils.concatByteArrays = function(byteArrays){
 	return ret;
 };
 
-Mp4.utils = utils;
-
-})(this, Mp4);
+}).call(mp4.utils, this);

@@ -1,11 +1,21 @@
-(function(window, Mp4){
+/**
+ * Copyright 2012 - Syu Kato <ukyo.web@gmail.com>
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
 
-var box = {},
-	putUi16 = Mp4.utils.putUi16,
-	putUi24 = Mp4.utils.putUi24,
-	putUi32 = Mp4.utils.putUi32,
-	putStr = Mp4.utils.putStr,
-	concatByteArrays = Mp4.utils.concatByteArrays;
+var mp4 = mp4 || {};
+mp4.box = mp4.box || {};
+
+(function(window, utils){
+
+var self = this,
+	putUi16 = utils.putUi16,
+	putUi24 = utils.putUi24,
+	putUi32 = utils.putUi32,
+	putStr = utils.putStr,
+	concatByteArrays = utils.concatByteArrays;
 
 
 /**
@@ -14,7 +24,7 @@ var box = {},
  * @param {string} type
  * @return {Uint8Array}
  */
-box.createBox = function(size, type){
+this.createBox = function(size, type){
 	var box = new Uint8Array(size);
 	putUi32(box, size, 0);
 	putStr(box, type, 4);
@@ -29,8 +39,8 @@ box.createBox = function(size, type){
  * @param {number} flags
  * @return {Uint8Array}
  */
-box.createFullBox = function(size, type, version, flags){
-	var box = createBox(size, type);
+this.createFullBox = function(size, type, version, flags){
+	var box = self.createBox(size, type);
 	putUi16(box, version, 8);
 	putUi16(box, flags, 10);
 	return box;
@@ -56,9 +66,9 @@ box.createFullBox = function(size, type, version, flags){
  * @param {Uint8Array} esdsBox
  * @return {Uint8Array}
  */
-box.createMp4aBox = function(dataReferenceIndex, timeScale, esdsBox){
+this.createMp4aBox = function(dataReferenceIndex, timeScale, esdsBox){
 	var size = 36 + esdsBox.length,
-		box = createBox(size, "mp4a");
+		box = self.createBox(size, "mp4a");
 	putUi16(box, dataReferenceIndex, 14);
 	putUi16(box, 2, 24);
 	putUi16(box, 16, 26);
@@ -78,8 +88,8 @@ box.createMp4aBox = function(dataReferenceIndex, timeScale, esdsBox){
  * @return {Uint8Array}
  * TODO
  */
-box.createEsdsBox = function(esDescr){
-	var box = createFullBox(12 + esDescr.length, "esds", 0, 0);
+this.createEsdsBox = function(esDescr){
+	var box = self.createFullBox(12 + esDescr.length, "esds", 0, 0);
 	box.set(esDescr, 12);
 	return box;
 };
@@ -116,8 +126,8 @@ box.createEsdsBox = function(esDescr){
  * @param {boolean} isVisual
  * @return {Uint8Array}
  */
-box.createTkhdBox = function(creationTime, modificationTime, trackId, duration, isVisual){
-	var box = createFullBox(92, "tkhd", 0, 1);
+this.createTkhdBox = function(creationTime, modificationTime, trackId, duration, isVisual){
+	var box = self.createFullBox(92, "tkhd", 0, 1);
 	putUi32(box, creationTime, 12);
 	putUi32(box, modificationTime, 16);
 	putUi32(box, trackId, 20);
@@ -157,8 +167,8 @@ box.createTkhdBox = function(creationTime, modificationTime, trackId, duration, 
  * @param {number} duration
  * @return {Uint8Array}
  */
-box.createMdhdBox = function(creationTime, modificationTime, timeScale, duration){
-	var box = createFullBox(32, "mdhd", 0, 0);
+this.createMdhdBox = function(creationTime, modificationTime, timeScale, duration){
+	var box = self.createFullBox(32, "mdhd", 0, 0);
 	putUi32(box, creationTime, 12);
 	putUi32(box, modificationTime, 16);
 	putUi32(box, timeScale, 20);
@@ -181,8 +191,8 @@ box.createMdhdBox = function(creationTime, modificationTime, timeScale, duration
  * @param {string} name
  * @return {Uint8Array}
  */
-box.createHdlrBox = function(handlerType, name){
-	var box = createFullBox(12 + 4 + 4 + 12 + name.length + 1, "hdlr", 0, 0);
+this.createHdlrBox = function(handlerType, name){
+	var box = self.createFullBox(12 + 4 + 4 + 12 + name.length + 1, "hdlr", 0, 0);
 	putStr(box, handlerType, 16);
 	putStr(box, name, 32);
 	return box;
@@ -194,13 +204,13 @@ box.createHdlrBox = function(handlerType, name){
  * @param {...Uint8Array} boxes
  * @return {Uint8Array}
  */
-box.concatBoxes = function(type, boxes){
+this.concatBoxes = function(type, boxes){
 	var boxes = Array.prototype.slice.call(arguments, 1),
 		type = arguments[0],
 		box, arr;
 	
 	arr = concatByteArrays(boxes);
-	box = createBox(arr.length + 8, type);
+	box = self.createBox(arr.length + 8, type);
 	box.set(arr, 8);
 	return box;
 };
@@ -216,10 +226,10 @@ box.concatBoxes = function(type, boxes){
  * @param {number} flags
  * @return {Uint8Array}
  */
-box.createUrlBox = function(location, flags){
+this.createUrlBox = function(location, flags){
 	flags = typeof flags === "undefined" ? 1 : flags;
 	var len = typeof location === "string" ? location.length + 1 : 0;
-	var box = createFullBox(12 + len, "url ", 0, flags);
+	var box = self.createFullBox(12 + len, "url ", 0, flags);
 	len && putStr(box, location, 12);
 	return box;
 };
@@ -237,7 +247,7 @@ box.createUrlBox = function(location, flags){
  * @param {number} flags
  * @return {Uint8Array}
  */
-box.createUrnBox = function(name, location, flags){
+this.createUrnBox = function(name, location, flags){
 	return createUrlBox(name + "\x00" + location, flags);
 };
 
@@ -254,12 +264,12 @@ box.createUrnBox = function(name, location, flags){
  * @param {...Uint8Array} dataEntries 
  * @return {Uint8Array}
  */
-box.createDrefBox = function(dataEntries){
+this.createDrefBox = function(dataEntries){
 	var dataEntries = Array.prototype.slice.call(arguments, 0),
 		box, arr;
 	
 	arr = concatByteArrays(dataEntries);
-	box = createFullBox(arr.length + 16, "dref", 0, 0);
+	box = self.createFullBox(arr.length + 16, "dref", 0, 0);
 	putUi32(box, 12, dataEntries.length);
 	box.set(arr, 16);
 	return box;
@@ -280,8 +290,8 @@ box.createDrefBox = function(dataEntries){
  * @param {Array} sampleSizeArr
  * @return {Uint8Array}
  */
-box.createStszBox = function(sampleSize, sampleSizeArr){
-	var box = createFullBox(12 + 8 + (sampleSizeArr.length * 4), "stsz", 0, 0),
+this.createStszBox = function(sampleSize, sampleSizeArr){
+	var box = self.createFullBox(12 + 8 + (sampleSizeArr.length * 4), "stsz", 0, 0),
 		i, n;
 	
 	putUi32(box, sampleSize, 12);
@@ -325,8 +335,8 @@ box.createStszBox = function(sampleSize, sampleSizeArr){
  * @param {number} nextTrackId
  * @return {Uint8Array}
  */
-box.createMvhdBox = function(creationTime, modificationTime, timeScale, duration, nextTrackId){
-	var box = createFullBox(108, "mvhd", 0, 0);
+this.createMvhdBox = function(creationTime, modificationTime, timeScale, duration, nextTrackId){
+	var box = self.createFullBox(108, "mvhd", 0, 0);
 	putUi32(box, creationTime, 12);
 	putUi32(box, modificationTime, 16);
 	putUi32(box, timeScale, 20);
@@ -347,22 +357,12 @@ box.createMvhdBox = function(creationTime, modificationTime, timeScale, duration
  * 	InitialObjectDescriptor OD;
  * }
  * 
- * @param {number} odProfile
- * @param {number} sceneProfile
- * @param {number} audioProfile
- * @param {number} visualProfile
- * @param {number} graphicsProfile
+ * @param {Uint8Array} initalObjectDescr
  * @return {Uint8Array}
  */
-box.createIodsBox = function(odProfile, sceneProfile, audioProfile, visualProfile, graphicsProfile){
-	var box = createFullBox(21, "iods", 0, 0);
-	putUi16(box, 0x1007, 12); //?
-	putUi16(box, 0x004F, 14);
-	box[16] = odProfile;
-	box[17] = sceneProfile;
-	box[18] = audioProfile;
-	box[19] = visualProfile;
-	box[20] = graphicsProfile;
+this.createIodsBox = function(initalObjectDescr){
+	var box = self.createFullBox(initalObjectDescr.length + 12, "iods", 0, 0);
+	box.set(initalObjectDescr, 12);
 	return box;
 };
 
@@ -371,20 +371,20 @@ box.createIodsBox = function(odProfile, sceneProfile, audioProfile, visualProfil
  * @param {...Uint8Array} args
  * @return {Uint8Array}
  */
-box.createDinfBox = function(args){
+this.createDinfBox = function(args){
 	var args = Array.prototype.slice.call(arguments, 0),
 		size = 16,
 		offset = 16,
 		i, n, dref, dinf;
 	
 	for(i = 0, n = args.length; i < n; ++i) size += args[i].length;
-	dref = createFullBox(size, "dref", 0, 0);
+	dref = self.createFullBox(size, "dref", 0, 0);
 	putUi32(dref, n, 12);
 	for(i = 0; i < n; ++i) {
 		dref.set(args[i], offset);
 		offset += args[i].length;
 	}
-	dinf = createBox(size + 8, "dinf");
+	dinf = self.createBox(size + 8, "dinf");
 	dinf.set(dref, 8);
 	return dinf;
 };
@@ -402,12 +402,12 @@ box.createDinfBox = function(args){
  * @param {...Uint8Array} sampleEntries
  * @return {Uint8Array}
  */
-box.createStsdBox = function(sampleEntries){
+this.createStsdBox = function(sampleEntries){
 	var sampleEntries = Array.prototype.slice.call(arguments, 0),
 		box, arr;
 	
 	arr = concatByteArrays(sampleEntries);
-	box = createFullBox(arr.length + 16, "stsd", 0, 0);
+	box = self.createFullBox(arr.length + 16, "stsd", 0, 0);
 	putUi32(box, sampleEntries.length, 12);
 	box.set(arr, 16);
 	return box;
@@ -427,9 +427,9 @@ box.createStsdBox = function(sampleEntries){
  * @param {Array} entries
  * @return {Uint8Array}
  */
-box.createSttsBox = function(entries){
+this.createSttsBox = function(entries){
 	var size = 16 + entries.length * 8,
-		box = createFullBox(size, "stts", 0, 0),
+		box = self.createFullBox(size, "stts", 0, 0),
 		offset = 16,
 		i, n;
 	
@@ -458,8 +458,8 @@ box.createSttsBox = function(entries){
  * @param {number} samplesPerChunk
  * @return {Uint8Array}
  */
-box.createStscBox = function(sampleCount, samplesPerChunk){
-	var box = createFullBox(40, "stsc", 0, 0);
+this.createStscBox = function(sampleCount, samplesPerChunk){
+	var box = self.createFullBox(40, "stsc", 0, 0);
 	putUi32(box, 2, 12);
 	putUi32(box, 1, 16);
 	putUi32(box, samplesPerChunk, 20);
@@ -480,24 +480,16 @@ box.createStscBox = function(sampleCount, samplesPerChunk){
  *  }
  * }
  * 
- * @param {number} samplesPerChunk
- * @param {Array} sampleSizes
- * @param {number} dataStart
+ * @param {Array} chunkOffsets
  * @return {Uint8Array}
  */
-box.createStcoBox = function(samplesPerChunk, sampleSizes, dataStart){
-	var n = ~~(sampleSizes.length / samplesPerChunk) + 1,
-		box = createFullBox(16 + n * 4, "stco", 0, 0),
-		offset = dataStart,
+this.createStcoBox = function(chunkOffsets){
+	var n = chunkOffsets.length,
+		box = self.createFullBox(16 + n * 4, "stco", 0, 0),
 		i, j;
 	
 	putUi32(box, n, 12);
-	for(i = 0; i < n; ++i) {
-		putUi32(box, offset, i * 4 + 16);
-		for(j = 0; j < samplesPerChunk; ++j) {
-			offset += sampleSizes[i * 4 + j];
-		}
-	}
+	for(i = 0; i < n; ++i) putUi32(box, chunkOffsets[i], i * 4 + 16);
 	return box;
 };
 
@@ -511,8 +503,8 @@ box.createStcoBox = function(samplesPerChunk, sampleSizes, dataStart){
  * @param {string} str
  * @return {Uint8Array}
  */
-box.createFreeBox = function(str){
-	var box = createBox(8 + str.length + 1, "free");
+this.createFreeBox = function(str){
+	var box = self.createBox(8 + str.length + 1, "free");
 	putStr(box, str, 8);
 	return box;
 };
@@ -523,9 +515,9 @@ box.createFreeBox = function(str){
  * @param {...string} other 
  * @return {Uint8Array}
  */
-box.createFtypBox = function(main, other){
+this.createFtypBox = function(main, other){
 	var args = Array.prototype.slice.call(arguments, 0),
-		box = createBox(args.length * 4 + 16, "ftyp"),
+		box = self.createBox(args.length * 4 + 16, "ftyp"),
 		offset = 16,
 		i, n;
 	
@@ -537,6 +529,4 @@ box.createFtypBox = function(main, other){
 	return box;
 };
 
-Mp4.box = box;
-
-})(this, Mp4);
+}).call(mp4.box, this, mp4.utils);

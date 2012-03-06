@@ -106,12 +106,12 @@ this.createDecodeConfigDescriptor = function(objectTypeIndication, streamType, u
 
 /**
  * Create a decoder specific infomation.
- * @param {string} str
+ * @param {Uint8Array} arr
  * @return {Uint8Array}
  */
-this.createDecoderSpecificInfo = function(str){
-	var descr = self.createBaseDescriptor(str.length, 0x05);
-	putStr(descr, str, 2);
+this.createDecoderSpecificInfo = function(arr){
+	var descr = self.createBaseDescriptor(arr.length, 0x05);
+	descr.set(arr, 2);
 	return descr;
 };
 
@@ -171,4 +171,8 @@ this.createInitialObjectDescriptor = function(objectDescrId, includeInlineProfil
 	return descr;
 };
 
-}).call(mp4.descr, this, mp4.utils);
+}).call((function(mp4js){
+	mp4js = mp4js || {};
+	mp4js.descr = mp4js.descr || {};
+	return mp4js.descr;
+})(this.mp4js), this, this.mp4js.utils);

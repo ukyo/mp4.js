@@ -1,25 +1,21 @@
 /**
- * Copyright 2012 - Syu Kato <ukyo.web@gmail.com>
- * mp4.js
- * @version 0.1
+ * mp4.main.js Copyright 2012 - Syu Kato <ukyo.web@gmail.com>
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-var mp4 = mp4 || {};
-
-(function(window, mp4){
-
-mp4.version = "0.1";
+(function(window){
 
 var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder || window.BlobBuilder,
-	getUi16 = mp4.utils.getUi16,
-	getUi24 = mp4.utils.getUi24,
-	getUi32 = mp4.utils.getUi32,
-	getStr = mp4.utils.getStr,
-	isType = mp4.utils.isType,
-	concatByteArrays = mp4.utils.concatByteArrays,
+	getUi16 = this.utils.getUi16,
+	getUi24 = this.utils.getUi24,
+	getUi32 = this.utils.getUi32,
+	putUi16 = this.utils.putUi16,
+	getStr = this.utils.getStr,
+	isType = this.utils.isType,
+	concatByteArrays = this.utils.concatByteArrays
+	self = this,
 	
 	//see: http://www.mp4ra.org/atoms.html
 	boxes = {
@@ -274,6 +270,8 @@ var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder || window.MS
 	];
 
 
+
+
 /**
  * @param {Uint8Array} bytes
  * @param {number} offset
@@ -336,13 +334,13 @@ function getBoxInfo(bytes, offset){
  * @constructor
  * @param {ArrayBuffer|Uint8Array} buffer
  */
-mp4.Parser = function(buffer){
+this.Mp4 = function(buffer){
 	this.bytes = isType(buffer, ArrayBuffer) ? new Uint8Array(buffer) : buffer;
 	this.cache = {};
 };
 
 
-mp4.Parser.prototype = {
+this.Mp4.prototype = {
 	/**
 	 * @return {Object}
 	 */
@@ -425,7 +423,7 @@ mp4.Parser.prototype = {
  * @param {ArrayBuffer} buffer
  * @return {ArrayBuffer}
  */
-mp4.aacToM4a = function(buffer){
+this.aacToM4a = function(buffer){
 	var bytes = new Uint8Array(buffer),
 		offset = 0,
 		count = 0,
@@ -434,7 +432,7 @@ mp4.aacToM4a = function(buffer){
 		currentTime = Date.now(),
 		dataSize, chunkIndex, samplesPerChunk,
 		dataOffset, mdatOffset, stcoOffset,
-		mp4a, slConfigDescr, decConfigDescr, esDescr, decSpecificInfo,
+		mp4a, slConfigDescr, decConfigDescr, esDescr, decSpecificInfo, arr,
 		initialObjectDescr,
 		esds, i, j,
 		ftyp, stts, stsc, stsz, stco, stsd, stbl, dinf,
@@ -462,26 +460,29 @@ mp4.aacToM4a = function(buffer){
 	}
 	samplesPerChunk = count;
 	
-	initialObjectDescr = mp4.descr.createInitialObjectDescriptor(0x01, 0x00, null, 0xFF, 0xFF, 0x29, 0xFF, 0xFF);
-	decSpecificInfo = mp4.descr.createDecoderSpecificInfo("\x12\x10");
-	decConfigDescr = mp4.descr.createDecodeConfigDescriptor(0x67, 0x05, 0, 367, 0, 0, [decSpecificInfo]);
-	slConfigDescr = mp4.descr.createSLConfigDescriptor(2);
-	esDescr = mp4.descr.createESDescriptor(0, 0, null, null, decConfigDescr, slConfigDescr, []);
-	esds = mp4.box.createEsdsBox(esDescr);
-	mp4a = mp4.box.createMp4aBox(1, adts.sampleRate, esds);
+	initialObjectDescr = self.descr.createInitialObjectDescriptor(0x01, 0x00, null, 0xFF, 0xFF, 0x29, 0xFF, 0xFF);
+	//aac header info?
+	arr = new Uint8Array(2);
+	putUi16(arr, 0x1000 | (SAMPLERATE_TABLE.indexOf(adts.sampleRate) << 7) | (adts.channelConf << 3), 0);
+	decSpecificInfo = self.descr.createDecoderSpecificInfo(arr);
+	decConfigDescr = self.descr.createDecodeConfigDescriptor(0x67, 0x05, 0, 0, 0, 0, [decSpecificInfo]);
+	slConfigDescr = self.descr.createSLConfigDescriptor(2);
+	esDescr = self.descr.createESDescriptor(0, 0, null, null, decConfigDescr, slConfigDescr, []);
+	esds = self.box.createEsdsBox(esDescr);
+	mp4a = self.box.createMp4aBox(1, adts.sampleRate, esds);
 	
-	ftyp = mp4.box.createFtypBox("M4A ", "isom", "mp42");
-	stts = mp4.box.createSttsBox([{count: count, duration: 1024}]);
-	stsc = mp4.box.createStscBox(count, samplesPerChunk);
-	stsz = mp4.box.createStszBox(0, sampleSizes);
-	stsd = mp4.box.createStsdBox(mp4a);
-	dinf = mp4.box.createDinfBox(mp4.box.createUrlBox(null, 1));
-	smhd = mp4.box.createBox(16, "smhd");
-	mdhd = mp4.box.createMdhdBox(currentTime, currentTime, adts.sampleRate, count * 1024);
-	hdlr = mp4.box.createHdlrBox("soun", "mp4.js Audio Handler");
-	tkhd = mp4.box.createTkhdBox(currentTime, currentTime, 1, ~~(count * 1024 * 600 / adts.sampleRate));
-	iods = mp4.box.createIodsBox(initialObjectDescr);
-	mvhd = mp4.box.createMvhdBox(currentTime, currentTime, 600, ~~(count * 1024 * 600 / adts.sampleRate), 2);
+	ftyp = self.box.createFtypBox("M4A ", "isom", "mp42");
+	stts = self.box.createSttsBox([{count: count, duration: 1024}]);
+	stsc = self.box.createStscBox(count, samplesPerChunk);
+	stsz = self.box.createStszBox(0, sampleSizes);
+	stsd = self.box.createStsdBox(mp4a);
+	dinf = self.box.createDinfBox(self.box.createUrlBox(null, 1));
+	smhd = self.box.createBox(16, "smhd");
+	mdhd = self.box.createMdhdBox(currentTime, currentTime, adts.sampleRate, count * 1024);
+	hdlr = self.box.createHdlrBox("soun", "mp4.js Audio Handler");
+	tkhd = self.box.createTkhdBox(currentTime, currentTime, 1, ~~(count * 1024 * 600 / adts.sampleRate));
+	iods = self.box.createIodsBox(initialObjectDescr);
+	mvhd = self.box.createMvhdBox(currentTime, currentTime, 600, ~~(count * 1024 * 600 / adts.sampleRate), 2);
 	
 	dataSize = sampleSizes.reduce(function(a, b){return a + b});
 	dataStart =
@@ -490,15 +491,15 @@ mp4.aacToM4a = function(buffer){
 		hdlr.length + tkhd.length + iods.length + mvhd.length;
 	dataStart += 8 * 6;
 	dataStart += (~~(sampleSizes.length / samplesPerChunk) + 1) * 4 + 16;
-	stco = mp4.box.createStcoBox([dataStart, dataStart + dataSize]);
+	stco = self.box.createStcoBox([dataStart, dataStart + dataSize]);
 	
-	stbl = mp4.box.concatBoxes("stbl", stsd, stts, stsc, stsz, stco);
-	minf = mp4.box.concatBoxes("minf", smhd, dinf, stbl);
-	mdia = mp4.box.concatBoxes("mdia", mdhd, hdlr, minf);
-	trak = mp4.box.concatBoxes("trak", tkhd, mdia);
-	moov = mp4.box.concatBoxes("moov", mvhd, iods, trak);
+	stbl = self.box.concatBoxes("stbl", stsd, stts, stsc, stsz, stco);
+	minf = self.box.concatBoxes("minf", smhd, dinf, stbl);
+	mdia = self.box.concatBoxes("mdia", mdhd, hdlr, minf);
+	trak = self.box.concatBoxes("trak", tkhd, mdia);
+	moov = self.box.concatBoxes("moov", mvhd, iods, trak);
 	
-	mdat = mp4.box.createBox(dataSize + 8, "mdat");
+	mdat = self.box.createBox(dataSize + 8, "mdat");
 	dataOffset = 0;
 	mdatOffset = 8;
 	for(i = 0; i < count; ++i) {
@@ -507,9 +508,9 @@ mp4.aacToM4a = function(buffer){
 		mdatOffset += sampleSizes[i];
 	}
 	
-	free = mp4.box.createFreeBox("Produced with mp4.js " + mp4.version);
+	free = self.box.createFreeBox("Produced with mp4.js " + self.version);
 	
 	return concatByteArrays(ftyp, moov, mdat, free).buffer;
 };
 
-})(this, mp4);
+}).call(this.mp4js, this);

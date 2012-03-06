@@ -1,12 +1,9 @@
 /**
- * @license Copyright 2012 - Syu Kato <ukyo.web@gmail.com>
- * mp4.js
+ * mp4.utils.js Copyright 2012 - Syu Kato <ukyo.web@gmail.com>
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * http://www.apache.org/licenses/LICENSE-2.0
  */
-
-var mp4 = mp4 || {};
-mp4.utils = mp4.utils || {};
 
 (function(window){
 
@@ -145,4 +142,8 @@ this.concatByteArrays = function(byteArrays){
 	return ret;
 };
 
-}).call(mp4.utils, this);
+}).call((function(mp4js){
+	mp4js = mp4js || {};
+	mp4js.utils = mp4js.utils || {};
+	return mp4js.utils;
+})(this.mp4js), this);

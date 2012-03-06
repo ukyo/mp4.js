@@ -1,12 +1,9 @@
 /**
- * Copyright 2012 - Syu Kato <ukyo.web@gmail.com>
+ * mp4.box.js Copyright 2012 - Syu Kato <ukyo.web@gmail.com>
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * http://www.apache.org/licenses/LICENSE-2.0
  */
-
-var mp4 = mp4 || {};
-mp4.box = mp4.box || {};
 
 (function(window, utils){
 
@@ -529,4 +526,8 @@ this.createFtypBox = function(main, other){
 	return box;
 };
 
-}).call(mp4.box, this, mp4.utils);
+}).call((function(mp4js){
+	mp4js = mp4js || {};
+	mp4js.box = mp4js.box || {};
+	return mp4js.box;
+})(this.mp4js), this, this.mp4js.utils);

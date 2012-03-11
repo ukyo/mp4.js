@@ -12,7 +12,8 @@ var self = this,
 	putUi24 = utils.putUi24,
 	putUi32 = utils.putUi32,
 	putStr = utils.putStr,
-	concatByteArrays = utils.concatByteArrays;
+	concatByteArrays = utils.concatByteArrays,
+	isType = utils.isType;
 
 
 /**
@@ -451,19 +452,21 @@ this.createSttsBox = function(entries){
  *  }
  * }
  * 
- * @param {number} sampleCount
- * @param {number} samplesPerChunk
+ * @param {Array.<Object>} chunks
  * @return {Uint8Array}
  */
-this.createStscBox = function(sampleCount, samplesPerChunk){
-	var box = self.createFullBox(40, "stsc", 0, 0);
-	putUi32(box, 2, 12);
-	putUi32(box, 1, 16);
-	putUi32(box, samplesPerChunk, 20);
-	putUi32(box, 1, 24);
-	putUi32(box, ~~(sampleCount / samplesPerChunk) + 1, 28);
-	putUi32(box, sampleCount % samplesPerChunk, 32);
-	putUi32(box, 1, 36);
+this.createStscBox = function(chunks){
+	chunks = isType(chunks, Array) ? chunks : [chunks];
+	var n = chunks.length,
+		box = self.createFullBox(12 + 4 + n * 12, "stsc", 0, 0),
+		i, offset = 16;
+	
+	putUi32(box, n, 12);
+	for(i = 0; i < n; ++i) {
+		putUi32(box, chunks[i].firstChunk, offset); offset += 4;
+		putUi32(box, chunks[i].samplesPerChunk, offset); offset += 4;
+		putUi32(box, chunks[i].samplesDescriptionIndex, offset); offset += 4;
+	}
 	return box;
 };
 

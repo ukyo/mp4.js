@@ -465,7 +465,7 @@ this.aacToM4a = function(buffer){
 	arr = new Uint8Array(2);
 	putUi16(arr, 0x1000 | (SAMPLERATE_TABLE.indexOf(adts.sampleRate) << 7) | (adts.channelConf << 3), 0);
 	decSpecificInfo = self.descr.createDecoderSpecificInfo(arr);
-	decConfigDescr = self.descr.createDecodeConfigDescriptor(0x67, 0x05, 0, 0, 0, 0, [decSpecificInfo]);
+	decConfigDescr = self.descr.createDecodeConfigDescriptor(0x40, 0x05, 0, 0, 0, 0, [decSpecificInfo]);
 	slConfigDescr = self.descr.createSLConfigDescriptor(2);
 	esDescr = self.descr.createESDescriptor(0, 0, null, null, decConfigDescr, slConfigDescr, []);
 	esds = self.box.createEsdsBox(esDescr);
@@ -473,7 +473,7 @@ this.aacToM4a = function(buffer){
 	
 	ftyp = self.box.createFtypBox("M4A ", "isom", "mp42");
 	stts = self.box.createSttsBox([{count: count, duration: 1024}]);
-	stsc = self.box.createStscBox(count, samplesPerChunk);
+	stsc = self.box.createStscBox({firstChunk: 1, samplesPerChunk: samplesPerChunk, samplesDescriptionIndex: 1});
 	stsz = self.box.createStszBox(0, sampleSizes);
 	stsd = self.box.createStsdBox(mp4a);
 	dinf = self.box.createDinfBox(self.box.createUrlBox(null, 1));
@@ -490,8 +490,8 @@ this.aacToM4a = function(buffer){
 		stsd.length + dinf.length + smhd.length + mdhd.length +
 		hdlr.length + tkhd.length + iods.length + mvhd.length;
 	dataStart += 8 * 6;
-	dataStart += (~~(sampleSizes.length / samplesPerChunk) + 1) * 4 + 16;
-	stco = self.box.createStcoBox([dataStart, dataStart + dataSize]);
+	dataStart += (~~(sampleSizes.length / samplesPerChunk)) * 4 + 16;
+	stco = self.box.createStcoBox([dataStart]);
 	
 	stbl = self.box.concatBoxes("stbl", stsd, stts, stsc, stsz, stco);
 	minf = self.box.concatBoxes("minf", smhd, dinf, stbl);

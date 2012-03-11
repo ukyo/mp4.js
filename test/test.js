@@ -13,7 +13,8 @@ asyncTest('mp4->aac, aac->m4a', function(){
 			var extracted = new Uint8Array(aacBuff);
 			var correct = new Uint8Array(buffer);
 			
-			equal(extracted.length, correct.length, 'check length');
+			equal(extracted.length, correct.length, 'check length aac');
+			start();
 			
 			var eq = true;
 			for(var i = 0, n = extracted.length; i < n; ++i) {
@@ -22,7 +23,7 @@ asyncTest('mp4->aac, aac->m4a', function(){
 					break;
 				}
 			}
-			ok(eq, 'diff');
+			ok(eq, 'diff aac');
 			
 			var m4aBuff = mp4js.aacToM4a(aacBuff);
 			ok(m4aBuff, 'aac to m4a');
@@ -31,7 +32,8 @@ asyncTest('mp4->aac, aac->m4a', function(){
 				var rebuild = new Uint8Array(m4aBuff);
 				var correct = new Uint8Array(buffer);
 				
-				equal(rebuild.length, correct.length, 'check length');
+				equal(rebuild.length, correct.length, 'check length m4a');
+				start();
 				
 				var eq = true;
 				var createModificate = [
@@ -49,7 +51,7 @@ asyncTest('mp4->aac, aac->m4a', function(){
 						break;
 					}
 				}
-				ok(eq, 'diff');
+				ok(eq, 'diff m4a');
 			});
 		});
 	});

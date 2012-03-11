@@ -34,6 +34,21 @@ this.createBaseDescriptor = function(size, tag){
 
 /**
  * Create a ES_Descriptor.
+ * 
+ * aligned(8) class ES_Descriptor extends BaseDescriptor: bit(8) tag=ES_DescrTag {
+ *  bit(16)      ES_ID;
+ *  bit(1)       streamDependenceFlag;
+ *  const bit(1) reserved=1;
+ *  bit(5)       streamPriority;
+ *  if (streamDependenceFlag) bit(16) dependsOn_ES_ID;
+ *  if (URL_Flag) bit(8) URLstring
+ *  ExtensionDescriptor     extDescr[0 .. 255];
+ *  LanguageDescriptor      langConfigDescr[0 .. 1];
+ *  DecoderConfigDescriptor decConfigDescr;
+ *  SLConfigDescriptor      slConfigDescr;
+ *  IPI_DescPointer         ipiPtr[0 .. 1];
+ * }
+ * 
  * @param {number} esId
  * @param {number} streamPriority
  * @param {number} dependsOnEsId
@@ -48,7 +63,7 @@ this.createESDescriptor = function(esId, streamPriority, dependsOnEsId, url, dec
 		streamDependenceFlag = dependsOnEsId != null ? 1 : 0,
 		size = 3,
 		offset = 2,
-		descr, arr;
+		descr, arr, view;
 	
 	subDescrs = subDescrs == null ? [] : isType(subDescrs, Array) ? subDescrs : [subDescrs];
 	size += streamDependenceFlag ? 2 : 0;
@@ -58,16 +73,17 @@ this.createESDescriptor = function(esId, streamPriority, dependsOnEsId, url, dec
 	arr = concatByteArrays(subDescrs);
 	size += arr.length;
 	descr = self.createBaseDescriptor(size, 0x03);
-	putUi16(descr, esId, offset);
+	view = new DataView(descr.buffer);
+	view.setUint16(offset, esId);
 	offset += 2;
 	descr[offset++] = (streamDependenceFlag << 7) | (urlFlag << 6) | streamPriority;
 	if(streamDependenceFlag) {
-		putUi16(descr, dependsOnEsId, offset);
+		view.setUint16(offset, dependsOnEsId);
 		offset += 2;
 	}
 	if(urlFlag) {
 		descr[offset++] = url.length;
-		putStr(descr, url, offset);
+		view.setString(offset, url);
 		offset += url.length;
 	}
 	descr.set(decConfigDescr, offset);
@@ -79,7 +95,20 @@ this.createESDescriptor = function(esId, streamPriority, dependsOnEsId, url, dec
 };
 
 /**
- * Create a decode config descriptor.
+ * Create a DecodeConfigDescriptor.
+ * 
+ * aligned(8) class DecodeConfigDescriptor extends BaseDescriptor: bit(8) tag=DecoderConfigDescrTag {
+ *  bit(8) objectTypeIndication;
+ *  bit(6) streamType;
+ *  bit(1) upStream;
+ *  const bit(1) reserved=1;
+ *  bit(24) bufferSizeDB;
+ *  bit(32) maxBitrate;
+ *  bit(32) avgBitrate;
+ *  DecoderSpecificInfo decSpecificInfo[0 .. 1];
+ *  profileLevelIndicationIndexDescriptor profileLevelIndicationIndexDescr[0 .. 255];
+ * }
+ * 
  * @param {number} objectTypeIndication refer http://www.mp4ra.org/object.html
  * @param {number} streamType
  * @param {number} upStream
@@ -90,22 +119,23 @@ this.createESDescriptor = function(esId, streamPriority, dependsOnEsId, url, dec
  * @return {Uint8Array}
  */
 this.createDecodeConfigDescriptor = function(objectTypeIndication, streamType, upStream, bufferSizeDB, maxBitrate, avgBitrate, subDescrs){
-	var descr, arr;
+	var descr, arr, view;
 	
 	subDescrs = subDescrs == null ? [] : isType(subDescrs, Array) ? subDescrs : [subDescrs];
 	arr = concatByteArrays(subDescrs);
 	descr = self.createBaseDescriptor(arr.length + 13, 0x04);
+	view = new DataView(descr.buffer);
 	descr[2] = objectTypeIndication;
 	descr[3] = (streamType << 2) | (upStream << 1) | 1;
-	putUi24(descr, bufferSizeDB, 4);
-	putUi32(descr, maxBitrate, 7);
-	putUi32(descr, avgBitrate, 11);
+	view.setUint24(4, bufferSizeDB);
+	view.setUint32(7, maxBitrate);
+	view.setUint32(11, avgBitrate);
 	descr.set(arr, 15);
 	return descr
 };
 
 /**
- * Create a decoder specific infomation.
+ * Create a DecoderSpecificInfo.
  * @param {Uint8Array} arr
  * @return {Uint8Array}
  */
@@ -117,6 +147,40 @@ this.createDecoderSpecificInfo = function(arr){
 
 /**
  * Create a SL_ConfigDescriptor.
+ * 
+ * class SLConfigDescriptor extends BaseDescriptor : bit(8) tag=SLConfigDescrTag {
+ *  bit(8) predefined;
+ *  if (predefined==0) {
+ *   bit(1) useAccessUnitStartFlag;
+ *   bit(1) useAccessUnitEndFlag;
+ *   bit(1) useRandomAccessPointFlag;
+ *   bit(1) hasRandomAccessUnitsOnlyFlag;
+ *   bit(1) usePaddingFlag;
+ *   bit(1) useTimeStampsFlag;
+ *   bit(1) useIdleFlag;
+ *   bit(1) durationFlag;
+ *   bit(32) timeStampResolution;
+ *   bit(32) OCRResolution;
+ *   bit(8) timeStampLength; // must be ≤ 64
+ *   bit(8) OCRLength; // must be ≤ 64
+ *   bit(8) AU_Length; // must be ≤ 32
+ *   bit(8) instantBitrateLength;
+ *   bit(4) degradationPriorityLength;
+ *   bit(5) AU_seqNumLength; // must be ≤ 16
+ *   bit(5) packetSeqNumLength; // must be ≤ 16
+ *   bit(2) reserved=0b11;
+ *  }
+ *  if (durationFlag) {
+ *   bit(32) timeScale;
+ *   bit(16) accessUnitDuration;
+ *   bit(16) compositionUnitDuration;
+ *  }
+ *  if (!useTimeStampsFlag) {
+ *   bit(timeStampLength) startDecodingTimeStamp;
+ *   bit(timeStampLength) startCompositionTimeStamp;
+ *  }
+ * }
+ * 
  * TODO mada tukuttenaiyo
  * @param {number} predefined
  * @return {Uint8Array}
@@ -128,6 +192,30 @@ this.createSLConfigDescriptor = function(predefined){
 };
 
 /**
+ * Create a InitialObjectDescriptor.
+ * 
+ * class InitialObjectDescriptor extends BaseDiscriptor: bit(8) tag=InitialObjectDescrTag {
+ *  bit(10) ObjectDescriptorID;
+ *  bit(1) URL_Flag;
+ *  bit(1) includeInlineProfileLevelFlag;
+ *  const bit(4) reserved=0b1111;
+ *  if (URL_Flag) {
+ * 	 bit(8) URLLength;
+ *   bit(8) URLstring[URLLength];
+ *  } else {
+ * 	 bit(8) ODProfileLevelIndication;
+ *   bit(8) sceneProfileLevelIndication;
+ *   bit(8) audioProfileIndication;
+ *   bit(8) graphicsProfileLevelIndication;
+ *   ES_Descriptor esDescr[1 .. 255];
+ *   OCI_Descriptor ociDescr[0 .. 255];
+ *   IPMP_DescriptorPointer inmpDescrPtr[0 .. 255];
+ *   IPMP_Descriptor ipmpDescr[0 .. 255];
+ *   IPMP_ToolListDescriptor toolListDescr[0 .. 1];
+ *  }
+ *  ExtensionDescriptor extDescr[0 .. 255];
+ * }
+ * 
  * @param {number} objectDescrId
  * @param {number} includeInlineProfileLevelFlag
  * @param {string} url
@@ -142,7 +230,7 @@ this.createSLConfigDescriptor = function(predefined){
  */
 this.createInitialObjectDescriptor = function(objectDescrId, includeInlineProfileLevelFlag, url, odProfile, sceneProfile, audioProfile, visualProfile, graphicsProfile, subDescrs, extDescrs){
 	var urlFlag = typeof url === "string" ? 1 : 0,
-		size = 2, offset = 4, descr, subArr, extArr;
+		size = 2, offset = 4, descr, view, subArr, extArr;
 	
 	subDescrs = subDescrs == null ? [] : isType(subDescrs, Array) ? subDescr : [subDescr];
 	extDescrs = extDescrs == null ? [] : isType(extDescrs, Array) ? extDescr : [extDescr];
@@ -151,13 +239,15 @@ this.createInitialObjectDescriptor = function(objectDescrId, includeInlineProfil
 	size += extArr.length;
 	if(urlFlag) {
 		descr = self.createBaseDescriptor(size, 0x10);
+		view = new DataView(descr.buffer);
 		descr[offset++] = url.length;
-		putStr(descr, url, offset);
+		view.setString(offset, url);
 		offset += url.length;
 	} else {
 		subArr = concatByteArrays(subDescrs);
 		size += subArr.length;
 		descr = self.createBaseDescriptor(size, 0x10);
+		view = new DataView(descr.buffer);
 		descr[offset++] = odProfile;
 		descr[offset++] = sceneProfile;
 		descr[offset++] = audioProfile;
@@ -166,7 +256,7 @@ this.createInitialObjectDescriptor = function(objectDescrId, includeInlineProfil
 		descr.set(subArr, offset);
 		offset += subArr.length;
 	}
-	putUi16(descr, (objectDescrId << 6) | (urlFlag << 5) | (includeInlineProfileLevelFlag << 4) | 0xF, 2);
+	view.setUint16(2, (objectDescrId << 6) | (urlFlag << 5) | (includeInlineProfileLevelFlag << 4) | 0xF);
 	descr.set(extArr, offset);
 	return descr;
 };

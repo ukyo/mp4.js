@@ -31,6 +31,19 @@ this.createBox = function(size, type){
 };
 
 /**
+ * Get a BoxInfo.
+ * @param {Uint8Array}
+ * @return {Object}
+ */
+this.getBoxInfo = function(bytes){
+	var view = new DataView(bytes.buffer, bytes.byteOffset);
+	return {
+		size: view.getUint32(0),
+		type: view.getString(4, 4)
+	};
+};
+
+/**
  * Create a full box.
  * @param {number} size
  * @param {string} type
@@ -44,6 +57,21 @@ this.createFullBox = function(size, type, version, flags){
 	view.setUint16(8, version);
 	view.setUint16(10, flags);
 	return box;
+};
+
+/**
+ * Get a FullBoxInfo.
+ * @param {Uint8Array}
+ * @return {Object}
+ */
+this.getFullBoxInfo = function(bytes){
+	var view = new DataView(bytes.buffer, bytes.byteOffset);
+	return {
+		size: view.getUint32(0),
+		type: view.getString(4, 4),
+		version: view.getUint16(8),
+		flags: vies.getUint16(10)
+	};
 };
 
 /**
@@ -79,6 +107,15 @@ this.createMp4aBox = function(dataReferenceIndex, timeScale, esdsBox){
 };
 
 /**
+ * Parse a MPEG4AudioSampleDescriptionBox.
+ * @param {Uint8Array}
+ * @return {Object}
+ */
+this.parseMp4aBox = function(){
+	
+};
+
+/**
  * Create a ESDescriptorBox (esds).
  * 
  * aligned(8) class ESDAtom extends FullAtom('esds', version = 0, 0) {
@@ -93,6 +130,15 @@ this.createEsdsBox = function(esDescr){
 	var box = self.createFullBox(12 + esDescr.length, "esds", 0, 0);
 	box.set(esDescr, 12);
 	return box;
+};
+
+/**
+ * Parse a ESDescriptorBox.
+ * @param {Uint8Array}
+ * @return {Object}
+ */
+this.parseEsdsBox = function(){
+	
 };
 
 /**
@@ -144,6 +190,15 @@ this.createTkhdBox = function(creationTime, modificationTime, trackId, duration,
 };
 
 /**
+ * Parse a TrackHeaderBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseTkhdBox = function(){
+	
+};
+
+/**
  * Create a MediaHeaderBox (mdhd).
  * 
  * aligned(8) class MediaHeaderAtom extends FullAtom('tkhd', version, 0) {
@@ -181,6 +236,15 @@ this.createMdhdBox = function(creationTime, modificationTime, timeScale, duratio
 };
 
 /**
+ * Parse a MediaHeaderBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseMdhdBox = function(bytes){
+	
+};
+
+/**
  * Create a HandlerBox (hdlr).
  * 
  * aligned(8) class HandlerAtom extends FullAtom('hdlr', version, 0) {
@@ -200,6 +264,15 @@ this.createHdlrBox = function(handlerType, name){
 	view.setString(16, handlerType);
 	view.setString(32, name);
 	return box;
+};
+
+/**
+ * Parse a HandlerBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseHdlrBox = function(bytes){
+	
 };
 
 /**
@@ -240,6 +313,15 @@ this.createUrlBox = function(location, flags){
 };
 
 /**
+ * Parse a URLDataEntryBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseUrlBox = function(bytes){
+	
+};
+
+/**
  * Create a URNDataEntryBox (urn ).
  * 
  * aligned(8) class DataEntryUrnAtom extends FullAtom('urn ', version = 0, flags) {
@@ -254,6 +336,15 @@ this.createUrlBox = function(location, flags){
  */
 this.createUrnBox = function(name, location, flags){
 	return createUrlBox(name + "\x00" + location, flags);
+};
+
+/**
+ * Parse a URNDataEntryBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseUrnBox = function(bytes){
+	
 };
 
 /**
@@ -280,6 +371,15 @@ this.createDrefBox = function(dataEntries){
 	// putUi32(box, 12, dataEntries.length);
 	box.set(arr, 16);
 	return box;
+};
+
+/**
+ * Parse a DataReferenceBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseDrefBox = function(bytes){
+	
 };
 
 /**
@@ -310,6 +410,15 @@ this.createStszBox = function(sampleSize, sampleSizeArr){
 		}
 	}
 	return box;
+};
+
+/**
+ * Parse a SampleSizeBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseStszBox = function(bytes){
+	
 };
 
 /**
@@ -360,6 +469,15 @@ this.createMvhdBox = function(creationTime, modificationTime, timeScale, duratio
 };
 
 /**
+ * Parse a MovieHeaderBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseMvhdBox = function(bytes){
+	
+};
+
+/**
  * Create a ObjectDescriptorBox (iods).
  * 
  * aligned(8) class ObjectDescriptorAtom extends FullAtom('iods', version = 0, 0) {
@@ -373,6 +491,15 @@ this.createIodsBox = function(initalObjectDescr){
 	var box = self.createFullBox(initalObjectDescr.length + 12, "iods", 0, 0);
 	box.set(initalObjectDescr, 12);
 	return box;
+};
+
+/**
+ * Parse a ObjectDescriptorBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseIodsBox = function(bytes){
+	
 };
 
 /**
@@ -399,7 +526,16 @@ this.createDinfBox = function(args){
 };
 
 /**
- * Create a sample description box (stsd).
+ * Parse a data infomation box.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseDinfBox = function(bytes){
+	
+};
+
+/**
+ * Create a SampleDescriptionBox (stsd).
  * 
  * aligned(8) class SampleDescriptionAtom extends FullAtom('stsd', version = 0, 0) {
  * 	uint(32) entry-count;
@@ -421,6 +557,15 @@ this.createStsdBox = function(sampleEntries){
 	view.setUint32(12, sampleEntries.length);
 	box.set(arr, 16);
 	return box;
+};
+
+/**
+ * Parse a SampleDescriptionBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseStsdBox = function(bytes){
+	
 };
 
 /**
@@ -451,6 +596,15 @@ this.createSttsBox = function(entries){
 		offset += 8;
 	}
 	return box;
+};
+
+/**
+ * Parse a TimeToSampleBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseSttsBox = function(bytes){
+	
 };
 
 /**
@@ -485,6 +639,15 @@ this.createStscBox = function(chunks){
 };
 
 /**
+ * Parse a SampleToChunkBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseStscBox = function(bytes){
+	
+};
+
+/**
  * Create a ChunkOffsetBox (stco).
  * 
  * aligned(8) class ChunkOffsetAtom extends FullAtom('stco', version = 0, 0) {
@@ -509,6 +672,15 @@ this.createStcoBox = function(chunkOffsets){
 };
 
 /**
+ * Parse a ChunkOffsetBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseStcoBox = function(bytes){
+	
+};
+
+/**
  * Create a FreeSpaceBox (free).
  * 
  * aligned(8) class FreeSpaceAtom extends Atom(free-type) {
@@ -523,6 +695,15 @@ this.createFreeBox = function(str){
 		view = new DataView(box.buffer);
 	view.setString(8, str);
 	return box;
+};
+
+/**
+ * Parse a HandlerBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseHdlrBox = function(bytes){
+	
 };
 
 /**
@@ -545,6 +726,15 @@ this.createFtypBox = function(main, other){
 		offset += 4;
 	}
 	return box;
+};
+
+/**
+ * Parse a FreeSpaceBox.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseFreeBox = function(bytes){
+	
 };
 
 }).call((function(mp4js){

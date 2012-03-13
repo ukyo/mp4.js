@@ -24,7 +24,7 @@ var self = this,
  */
 this.createBox = function(size, type){
 	var box = new Uint8Array(size),
-		view = new DataView(box.buffer);
+		view = DataView.create(box);
 	view.setUint32(0, size);
 	view.setString(4, type);
 	return box;
@@ -36,7 +36,7 @@ this.createBox = function(size, type){
  * @return {Object}
  */
 this.getBoxInfo = function(bytes){
-	var view = new DataView(bytes.buffer, bytes.byteOffset);
+	var view = DataView.create(bytes);
 	return {
 		size: view.getUint32(0),
 		type: view.getString(4, 4)
@@ -53,7 +53,7 @@ this.getBoxInfo = function(bytes){
  */
 this.createFullBox = function(size, type, version, flags){
 	var box = self.createBox(size, type),
-		view = new DataView(box.buffer);
+		view = DataView.create(box);
 	view.setUint16(8, version);
 	view.setUint16(10, flags);
 	return box;
@@ -65,7 +65,7 @@ this.createFullBox = function(size, type, version, flags){
  * @return {Object}
  */
 this.getFullBoxInfo = function(bytes){
-	var view = new DataView(bytes.buffer, bytes.byteOffset);
+	var view = DataView.create(bytes);
 	return {
 		size: view.getUint32(0),
 		type: view.getString(4, 4),
@@ -97,7 +97,7 @@ this.getFullBoxInfo = function(bytes){
 this.createMp4aBox = function(dataReferenceIndex, timeScale, esdsBox){
 	var size = 36 + esdsBox.length,
 		box = self.createBox(size, "mp4a"),
-		view = new DataView(box.buffer);
+		view = DataView.create(box);
 	view.setUint16(14, dataReferenceIndex);
 	view.setUint16(24, 2);
 	view.setUint16(26, 16);
@@ -175,7 +175,7 @@ this.parseEsdsBox = function(){
  */
 this.createTkhdBox = function(creationTime, modificationTime, trackId, duration, isVisual){
 	var box = self.createFullBox(92, "tkhd", 0, 1),
-		view = new DataView(box.buffer);
+		view = DataView.create(box);
 	view.setUint32(12, creationTime);
 	view.setUint32(16, modificationTime);
 	view.setUint32(20, trackId);
@@ -194,8 +194,17 @@ this.createTkhdBox = function(creationTime, modificationTime, trackId, duration,
  * @param {Uint8Array} bytes
  * @return {Object}
  */
-this.parseTkhdBox = function(){
-	
+this.parseTkhdBox = function(bytes){
+	var view = DataView.create(bytes),
+		fullBoxInfo = self.getFullBoxInfo(bytes);
+	return {
+		fullBoxInfo: fullBoxInfo,
+		creattionTime: 0,
+		modificationTime: 0,
+		trackId: 0,
+		duration: 0,
+		isVisual: 0
+	};
 };
 
 /**
@@ -226,7 +235,7 @@ this.parseTkhdBox = function(){
  */
 this.createMdhdBox = function(creationTime, modificationTime, timeScale, duration){
 	var box = self.createFullBox(32, "mdhd", 0, 0),
-		view = new DataView(box.buffer);
+		view = DataView.create(box);
 	view.setUint32(12, creationTime);
 	view.setUint32(16, modificationTime);
 	view.setUint32(20, timeScale);
@@ -241,7 +250,15 @@ this.createMdhdBox = function(creationTime, modificationTime, timeScale, duratio
  * @return {Object}
  */
 this.parseMdhdBox = function(bytes){
-	
+	var view = DataView.create(bytes),
+		fullBoxInfo = self.getFullBoxInfo(bytes);
+	return {
+		fullBoxInfo: fullBoxInfo,
+		creationTime: 0,
+		modificationTime: 0,
+		timeScale: 0,
+		duration: 0
+	};
 };
 
 /**
@@ -260,7 +277,7 @@ this.parseMdhdBox = function(bytes){
  */
 this.createHdlrBox = function(handlerType, name){
 	var box = self.createFullBox(12 + 4 + 4 + 12 + name.length + 1, "hdlr", 0, 0),
-		view = new DataView(box.buffer);
+		view = DataView.create(box);
 	view.setString(16, handlerType);
 	view.setString(32, name);
 	return box;
@@ -272,7 +289,13 @@ this.createHdlrBox = function(handlerType, name){
  * @return {Object}
  */
 this.parseHdlrBox = function(bytes){
-	
+	var view = DataView.create(bytes),
+		fullBoxInfo = self.getFullBoxInfo(bytes);
+	return {
+		fullBoxInfo: fullBoxInfo,
+		handlerType: view.getString(16, 4),
+		name: view.getString(32, bytes.length - 32)
+	};
 };
 
 /**
@@ -307,7 +330,7 @@ this.createUrlBox = function(location, flags){
 	flags = typeof flags === "undefined" ? 1 : flags;
 	var len = typeof location === "string" ? location.length + 1 : 0,
 		box = self.createFullBox(12 + len, "url ", 0, flags),
-		view = new DataView(box.buffer);
+		view = DataView.create(box);
 	len && view.setString(12, location);
 	return box;
 };
@@ -318,7 +341,11 @@ this.createUrlBox = function(location, flags){
  * @return {Object}
  */
 this.parseUrlBox = function(bytes){
-	
+	var view = DataView.create(bytes);
+	return {
+		fullBoxInfo: self.getFullBoxInfo(bytes),
+		location: view.getString(12, bytes.length - 13)
+	};
 };
 
 /**
@@ -344,7 +371,13 @@ this.createUrnBox = function(name, location, flags){
  * @return {Object}
  */
 this.parseUrnBox = function(bytes){
-	
+	var view = DataView.create(bytes),
+		props = view.getString(12, bytes.length -13).split("\00");
+	return {
+		fullBoxInfo: self.getFullBoxInfo(bytes),
+		name: props[0],
+		location: props[1]
+	};
 };
 
 /**
@@ -366,7 +399,7 @@ this.createDrefBox = function(dataEntries){
 	
 	arr = concatByteArrays(dataEntries);
 	box = self.createFullBox(arr.length + 16, "dref", 0, 0);
-	view = new DataView(box.buffer);
+	view = DataView.create(box);
 	view.setUint32(12, dataEntries.length);
 	// putUi32(box, 12, dataEntries.length);
 	box.set(arr, 16);
@@ -399,7 +432,7 @@ this.parseDrefBox = function(bytes){
  */
 this.createStszBox = function(sampleSize, sampleSizeArr){
 	var box = self.createFullBox(12 + 8 + (sampleSizeArr.length * 4), "stsz", 0, 0),
-		view = new DataView(box.buffer),
+		view = DataView.create(box),
 		i, n;
 	
 	view.setUint32(12, sampleSize);
@@ -418,7 +451,23 @@ this.createStszBox = function(sampleSize, sampleSizeArr){
  * @return {Object}
  */
 this.parseStszBox = function(bytes){
-	
+	var view = DataView.create(bytes),
+		sampleSize = view.getUint32(12),
+		sampleCount = view.getUint32(16),
+		body = [],
+		offset = 20,
+		i;
+	if(sampleSize === 0) {
+		for(i = 0; i < sampleCount; ++i) {
+			body[i] = view.getUint32(i * 4 + offset);
+		}
+	}
+	return {
+		fullBoxInfo: self.getFullBox(bytes),
+		sampleSize: sampleSize,
+		sampleCount: sampleCount,
+		body: body
+	};
 };
 
 /**
@@ -454,7 +503,7 @@ this.parseStszBox = function(bytes){
  */
 this.createMvhdBox = function(creationTime, modificationTime, timeScale, duration, nextTrackId){
 	var box = self.createFullBox(108, "mvhd", 0, 0),
-		view = new DataView(box.buffer);
+		view = DataView.create(box);
 	view.setUint32(12, creationTime);
 	view.setUint32(16, modificationTime);
 	view.setUint32(20, timeScale);
@@ -474,7 +523,15 @@ this.createMvhdBox = function(creationTime, modificationTime, timeScale, duratio
  * @return {Object}
  */
 this.parseMvhdBox = function(bytes){
-	
+	var view = DataView.create(bytes);
+	return {
+		fullBoxInfo: self.getFullBoxInfo(bytes),
+		creationTime: view.getUint32(12),
+		modificationTime: view.getUint32(16),
+		timeScale: view.getUint32(20),
+		duration: view.getUint32(24),
+		nextTrackId: view.getUint32(104)
+	};
 };
 
 /**
@@ -553,7 +610,7 @@ this.createStsdBox = function(sampleEntries){
 	
 	arr = concatByteArrays(sampleEntries);
 	box = self.createFullBox(arr.length + 16, "stsd", 0, 0);
-	view = new DataView(box.buffer);
+	view = DataView.create(box);
 	view.setUint32(12, sampleEntries.length);
 	box.set(arr, 16);
 	return box;
@@ -585,7 +642,7 @@ this.parseStsdBox = function(bytes){
 this.createSttsBox = function(entries){
 	var size = 16 + entries.length * 8,
 		box = self.createFullBox(size, "stts", 0, 0),
-		view = new DataView(box.buffer),
+		view = DataView.create(box),
 		offset = 16,
 		i, n;
 	
@@ -604,7 +661,23 @@ this.createSttsBox = function(entries){
  * @return {Object}
  */
 this.parseSttsBox = function(bytes){
-	
+	var view = DataView.create(bytes),
+		offset = 16,
+		entryCount = view.getUint32(12),
+		body = [],
+		i;
+	for(i = 0; i < entryCount; ++i) {
+		body[i] = {
+			sampleCount: view.getUint32(offset),
+			sampleDuration: view.getUint32(offset + 4)
+		};
+		offset += 8;
+	}
+	return {
+		fullBoxInfo: self.getFullBoxInfo(bytes),
+		entryCount: entryCount,
+		body: body
+	};
 };
 
 /**
@@ -626,7 +699,7 @@ this.createStscBox = function(chunks){
 	chunks = isType(chunks, Array) ? chunks : [chunks];
 	var n = chunks.length,
 		box = self.createFullBox(12 + 4 + n * 12, "stsc", 0, 0),
-		view = new DataView(box.buffer),
+		view = DataView.create(box),
 		i, offset = 16;
 	
 	view.setUint32(12, n);
@@ -644,7 +717,24 @@ this.createStscBox = function(chunks){
  * @return {Object}
  */
 this.parseStscBox = function(bytes){
-	
+	var view = DataView.create(bytes),
+		offset = 16,
+		entryCount = view.getUint32(12),
+		body = [],
+		i;
+	for(i = 0; i < entryCount; ++i) {
+		body[i] = {
+			firstChunk: view.getUint32(offset),
+			samplesPerChunk: view.getUint32(offset + 4),
+			samplesDescriptionIndex: view.getUint32(offset + 8)
+		};
+		offset += 12;
+	}
+	return {
+		fullBoxInfo: self.getFullBoxInfo(bytes),
+		entryCount: entryCount,
+		body: body
+	};
 };
 
 /**
@@ -663,7 +753,7 @@ this.parseStscBox = function(bytes){
 this.createStcoBox = function(chunkOffsets){
 	var n = chunkOffsets.length,
 		box = self.createFullBox(16 + n * 4, "stco", 0, 0),
-		view = new DataView(box.buffer),
+		view = DataView.create(box),
 		i, j;
 	
 	view.setUint32(12, n);
@@ -677,7 +767,20 @@ this.createStcoBox = function(chunkOffsets){
  * @return {Object}
  */
 this.parseStcoBox = function(bytes){
-	
+	var view = DataView.create(bytes),
+		entryCount = view.getUint32(12),
+		offset = 16,
+		body = [],
+		i;
+	for(i = 0; i < entryCount; ++i) {
+		body[i] = view.getUint32(offset);
+		offset += 4;
+	}
+	return {
+		fullBoxInfo: self.getFullBoxInfo(bytes),
+		entryCount: entryCount,
+		body: body
+	};
 };
 
 /**
@@ -692,18 +795,22 @@ this.parseStcoBox = function(bytes){
  */
 this.createFreeBox = function(str){
 	var box = self.createBox(8 + str.length + 1, "free"),
-		view = new DataView(box.buffer);
+		view = DataView.create(box);
 	view.setString(8, str);
 	return box;
 };
 
 /**
- * Parse a HandlerBox.
+ * Parse a FreeSpaceBox.
  * @param {Uint8Array} bytes
  * @return {Object}
  */
-this.parseHdlrBox = function(bytes){
-	
+this.parseFreeBox = function(bytes){
+	var view = DataView.create(bytes);
+	return {
+		boxInfo: self.getBoxInfo(bytes),
+		text: view.getString(8, bytes.length - 9)
+	};
 };
 
 /**
@@ -715,7 +822,7 @@ this.parseHdlrBox = function(bytes){
 this.createFtypBox = function(main, other){
 	var args = Array.prototype.slice.call(arguments, 0),
 		box = self.createBox(args.length * 4 + 16, "ftyp"),
-		view = new DataView(box.buffer),
+		view = DataView.create(box),
 		offset = 16,
 		i, n;
 	
@@ -734,7 +841,19 @@ this.createFtypBox = function(main, other){
  * @return {Object}
  */
 this.parseFreeBox = function(bytes){
-	
+	var view = DataView.create(bytes),
+		alternateBrands = [],
+		offset = 16,
+		i, n;
+	for(i = 0, n = (bytes.length - offset) / 4; i < n; ++i) {
+		alternateBrands[i] = view.getString(offset, 4);
+		offset += 4;
+	}
+	return {
+		boxInfo: self.getBoxInfo(bytes),
+		majerBrand: view.getString(8, 4),
+		alternateBrands: alternateBrands
+	};
 };
 
 }).call((function(mp4js){

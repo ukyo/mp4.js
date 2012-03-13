@@ -5,9 +5,11 @@ asyncTest('mp4->aac, aac->m4a', function(){
 		
 		var mp4 = new mp4js.Mp4(buffer);
 		ok(mp4, 'create instance');
+		start();
 		
 		var aacBuff = mp4.extractAACAsArrayBuffer();
 		ok(aacBuff, 'extract aac');
+		start();
 		
 		mp4js.utils.load('../resource/c11extract.aac', function(buffer){
 			var extracted = new Uint8Array(aacBuff);
@@ -24,9 +26,11 @@ asyncTest('mp4->aac, aac->m4a', function(){
 				}
 			}
 			ok(eq, 'diff aac');
+			start();
 			
 			var m4aBuff = mp4js.aacToM4a(aacBuff);
 			ok(m4aBuff, 'aac to m4a');
+			start();
 			
 			mp4js.utils.load('../resource/c11rebuild.m4a', function(buffer){
 				var rebuild = new Uint8Array(m4aBuff);
@@ -52,6 +56,7 @@ asyncTest('mp4->aac, aac->m4a', function(){
 					}
 				}
 				ok(eq, 'diff m4a');
+				start();
 			});
 		});
 	});

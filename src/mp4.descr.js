@@ -33,6 +33,18 @@ this.createBaseDescriptor = function(size, tag){
 };
 
 /**
+ * Get a Descriptor Info.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.getDescrInfo = function(bytes){
+	return {
+		tag: bytes[0],
+		size: bytes[1]
+	};
+};
+
+/**
  * Create a ES_Descriptor.
  * 
  * aligned(8) class ES_Descriptor extends BaseDescriptor: bit(8) tag=ES_DescrTag {
@@ -135,6 +147,25 @@ this.createDecodeConfigDescriptor = function(objectTypeIndication, streamType, u
 };
 
 /**
+ * Parse a DecodeConfigDescriptor.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseDecodeConfigDescriptor = function(bytes){
+	var view = DataView.create(bytes.subarray(2)),
+		descrInfo = self.getDescrInfo(bytes);
+	return {
+		descrInfo: descrInfo,
+		objectTypeIndication: view.getUint8(0),
+		streamType: view.getUint8(1) >> 2,
+		upStream: (view.getUint8(1) % 0x2) >> 1,
+		bufferSizeDB: view.getUint24(2),
+		maxBitrate: view.getUint32(5),
+		avgBitrate: view.getUint32(9)
+	};
+};
+
+/**
  * Create a DecoderSpecificInfo.
  * @param {Uint8Array} arr
  * @return {Uint8Array}
@@ -143,6 +174,20 @@ this.createDecoderSpecificInfo = function(arr){
 	var descr = self.createBaseDescriptor(arr.length, 0x05);
 	descr.set(arr, 2);
 	return descr;
+};
+
+/**
+ * Parse a DecoderSpecificInfo.
+ * @param {Uint8Array} bytes
+ * @return {Object}
+ */
+this.parseDecoderSpecificInfo = function(bytes){
+	var view = DataView.create(bytes.subarray(2)),
+		descrInfo = self.getDescrInfo(bytes);
+	return {
+		descrInfo: descrInfo,
+		data: view.getString(0, descrInfo.size)
+	};
 };
 
 /**

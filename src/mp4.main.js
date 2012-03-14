@@ -327,6 +327,43 @@ function getBoxInfo(bytes, offset){
 	}
 }
 
+/**
+ * Parser
+ * @constructor
+ */
+this.Parser = function(){
+	
+};
+
+this.Parser.prototype = {
+	parse: function(){
+		
+	}
+};
+
+this.Parser.box = {
+	mp4a: this.box.parseMp4aBox,
+	esds: this.box.parseEsdsBox,
+	tkhd: this.box.parseTkhdBox,
+	mdhd: this.box.parseMdhdBox,
+	hdlr: this.box.parseHdlrBox,
+	'url ': this.box.parseUrlBox,
+	'urn ': this.box.parseUrnBox,
+	dref: this.box.parseDrefBox,
+	stsz: this.box.parseStszBox,
+	mvhd: this.box.parseMvhdBox,
+	iods: this.box.parseIodsBox,
+	dinf: this.box.parseDinfBox,
+	stsd: this.box.parseStsdBox,
+	stts: this.box.parseSttsBox,
+	stsc: this.box.parseStscBox,
+	stco: this.box.parseStcoBox,
+	free: this.box.parseFreeBox
+};
+
+this.Parser.descr = {
+	
+};
 
 /**
  * Mp4 Parser
@@ -513,4 +550,4 @@ this.aacToM4a = function(buffer){
 	return concatByteArrays(ftyp, moov, mdat, free).buffer;
 };
 
-}).call(this.mp4js, this);
+}).call(mp4js, this);

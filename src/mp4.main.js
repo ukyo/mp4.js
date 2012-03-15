@@ -331,14 +331,50 @@ function getBoxInfo(bytes, offset){
  * Parser
  * @constructor
  */
-this.Parser = function(){
-	
+this.Parser = function(buffer){
+	this.bytes = new Uint8Array(buffser);
 };
 
 this.Parser.prototype = {
 	parse: function(){
-		
-	}
+		return this._parse(this.bytes);
+	},
+	
+	_parse: function(bytes){
+		var boxes = [],
+			boxInfo,
+			offset = 0;
+		while(offset < bytes.length) {
+			boxInfo = self.box.getBoxInfo(bytes);
+			boxes.push(this[boxInfo.type](bytes.subarray(offset, boxInfo.size)));
+			offset += boxInfo.size;
+		}
+		return boxes;
+	},
+	
+	moov: function(bytes){return Parser.prototype._parse(bytes.subarray(8))},
+	trak: function(bytes){return Parser.prototype._parse(bytes.subarray(8))},
+	stbl: function(bytes){return Parser.prototype._parse(bytes.subarray(8))},
+	minf: function(bytes){return Parser.prototype._parse(bytes.subarray(8))},
+	mdia: function(bytes){return Parser.prototype._parse(bytes.subarray(8))},
+	
+	mp4a: this.box.parseMp4aBox,
+	esds: this.box.parseEsdsBox,
+	tkhd: this.box.parseTkhdBox,
+	mdhd: this.box.parseMdhdBox,
+	hdlr: this.box.parseHdlrBox,
+	'url ': this.box.parseUrlBox,
+	'urn ': this.box.parseUrnBox,
+	dref: this.box.parseDrefBox,
+	stsz: this.box.parseStszBox,
+	mvhd: this.box.parseMvhdBox,
+	iods: this.box.parseIodsBox,
+	dinf: this.box.parseDinfBox,
+	stsd: this.box.parseStsdBox,
+	stts: this.box.parseSttsBox,
+	stsc: this.box.parseStscBox,
+	stco: this.box.parseStcoBox,
+	free: this.box.parseFreeBox
 };
 
 this.Parser.box = {
@@ -359,10 +395,6 @@ this.Parser.box = {
 	stsc: this.box.parseStscBox,
 	stco: this.box.parseStcoBox,
 	free: this.box.parseFreeBox
-};
-
-this.Parser.descr = {
-	
 };
 
 /**

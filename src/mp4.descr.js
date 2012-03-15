@@ -186,7 +186,7 @@ this.parseDecoderSpecificInfo = function(bytes){
 		descrInfo = self.getDescrInfo(bytes);
 	return {
 		descrInfo: descrInfo,
-		data: view.getString(0, descrInfo.size)
+		dataString: view.getString(0, descrInfo.size)
 	};
 };
 
@@ -234,6 +234,10 @@ this.createSLConfigDescriptor = function(predefined){
 	var descr = self.createBaseDescriptor(1, 0x06);
 	descr[2] = predefined;
 	return descr;
+};
+
+this.parseSLConfigDescriptor = function(){
+	
 };
 
 /**
@@ -304,6 +308,10 @@ this.createInitialObjectDescriptor = function(objectDescrId, includeInlineProfil
 	view.setUint16(2, (objectDescrId << 6) | (urlFlag << 5) | (includeInlineProfileLevelFlag << 4) | 0xF);
 	descr.set(extArr, offset);
 	return descr;
+};
+
+this.parseInitialObjectDescriptor = function(){
+	
 };
 
 }).call((function(mp4js){

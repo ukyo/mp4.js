@@ -1,5 +1,9 @@
 module mp4 {
   var toString = Object.prototype.toString;
+  var _memory8 = new Uint8Array(0x8000);
+  var _memory16 = new Uint16Array(_memory8.buffer);
+  var _memory32 = new Uint32Array(_memory8.buffer);
+
 
   export class DataView2 {
     private view: DataView;
@@ -19,6 +23,7 @@ module mp4 {
             break;
           case '[object Uint8Array]':
           case '[object Uint8ClampedArray]':
+          case '[object CanvasPixelArray]':
           case '[object Int8Array]':
           case '[object Uint16Array]':
           case '[object Int16Array]':
@@ -26,9 +31,16 @@ module mp4 {
           case '[object Int32Array]':
           case '[object Float32Array]':
           case '[object Float64Array]':
-            byteOffset = byteOffset !== void 0 ? byteOffset : buffer.byteOffset;
-            byteLength = byteLength !== void 0 ? byteLength : buffer.byteLength;
-            this.view = new DataView(buffer.buffer, byteOffset, byteLength);
+          case '[object DataView]':
+            if (byteOffset === void 0 && byteLength === void 0) {
+              this.view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+            } else if (byteOffset !== void 0 && byteLength === void 0) {
+              this.view = new DataView(buffer.buffer, buffer.byteOffset + byteOffset);
+            } else if (byteOffset === void 0 && byteLength !== void 0) {
+              this.view = new DataView(buffer.buffer, buffer.byteOffset, byteLength);
+            } else {
+              this.view = new DataView(buffer.buffer, byteOffset, byteLength);
+            }
             break;
           default: throw new TypeError();
         }
@@ -112,6 +124,78 @@ module mp4 {
       var bytes = new Uint8Array(this.buffer, this.byteOffset + byteOffset);
       var i = s.length;
       while(i) bytes[--i] = s.charCodeAt(i);
+    }
+
+    getUTF8String(byteOffset: number, byteLength: number): string {
+      var bytes = new Uint8Array(this.buffer, this.byteOffset + byteOffset, this.byteLength);
+      var unicode = _memory32;
+      var idx = 0;
+      var i = 0;
+      var c: number;
+      var ret = '';
+
+      while (i < byteLength) {
+        for (idx = 0; idx < 0x1000 && i < byteLength; ++i, ++idx) {
+          c = bytes[i];
+          if (c < 0x80) {
+            unicode[idx] = c;
+          } else if ((c >>> 5) === 0x06) {
+            unicode[idx] = (c & 0x1F) << 6;
+            unicode[idx] |= bytes[++i] & 0x3F;
+          } else if ((c >>> 4) === 0x0E) {
+            unicode[idx] = (c & 0x0F) << 12;
+            unicode[idx] |= (bytes[++i] & 0x3F) << 6;
+            unicode[idx] |= bytes[++i] & 0x3F;
+          } else {
+            unicode[idx] = (c & 0x07) << 18;
+            unicode[idx] |= (bytes[++i] & 0x3F) << 12;
+            unicode[idx] |= (bytes[++i] & 0x3F) << 6;
+            unicode[idx] |= bytes[++i] & 0x3F;
+          }
+        }
+        ret += String.fromCharCode.apply(unicode.subarray(0, idx));
+      }
+
+      return ret;
+    }
+
+    setUTF8String(byteOffset: number, s: string): number {
+      var n = s.length,
+          idx = -1,
+          memory = _memory8,
+          byteLength = memory.byteLength,
+          i, c;
+
+      for (i = 0; i < n; ++i) {
+        c = s.charCodeAt(i);
+        if (c <= 0x7F) {
+          memory[++idx] = c;
+        } else if (c <= 0x7FF) {
+          memory[++idx] = 0xC0 | (c >>> 6);
+          memory[++idx] = 0x80 | (c & 0x3F);
+        } else if (c <= 0xFFFF) {
+          memory[++idx] = 0xE0 | (c >>> 12);
+          memory[++idx] = 0x80 | ((c >>> 6) & 0x3F);
+          memory[++idx] = 0x80 | (c & 0x3F);
+        } else {
+          memory[++idx] = 0xF0 | (c >>> 18);
+          memory[++idx] = 0x80 | ((c >>> 12) & 0x3F);
+          memory[++idx] = 0x80 | ((c >>> 6) & 0x3F);
+          memory[++idx] = 0x80 | (c & 0x3F);
+        }
+
+        if (byteLength - idx <= 4) {
+          byteLength *= 2;
+          _memory8 = new Uint8Array(byteLength);
+          _memory8.set(memory);
+          memory = _memory8;
+        }
+      }
+
+      var bytes = new Uint8Array(this.buffer, this.byteOffset, this.byteLength);
+      bytes.set(memory.subarray(0, ++idx), byteOffset);
+
+      return idx;
     }
 
     getUint24(byteOffset: number, littleEndian: bool = false) {

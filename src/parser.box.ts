@@ -1,8 +1,8 @@
-module mp4.parser.box {
+module Mp4.Parser.Box {
 
   var handlerType: string;
 
-  var getBoxInfo = (bytes: Uint8Array, offset: number): IBox => {
+  var getBoxInfo = (bytes: Uint8Array, offset: number = 0): IBox => {
     var view = new DataView2(bytes, offset);
     return {
       byteLength: view.getUint32(0),
@@ -10,7 +10,7 @@ module mp4.parser.box {
     };
   };
 
-  var getFullBoxInfo = (bytes: Uint8Array, offset: number): IFullBox => {
+  var getFullBoxInfo = (bytes: Uint8Array, offset: number = 0): IFullBox => {
     var view = new DataView2(bytes, offset);
     return {
       byteLength: view.getUint32(0),
@@ -21,37 +21,38 @@ module mp4.parser.box {
   };
 
 
-  export class RootParser extends Parser {
+  export class RootParser extends BaseParser {
     constructor(bytes: Uint8Array) { super(bytes); }
 
     parse(): IBox[] {
-      var offset = 0;
-      var n = this.bytes.length;
       var info: IBox;
       var ret: IBox[] = [];
-
-      while (offset < n) {
-        info = getBoxInfo(this.bytes, offset);
-        ret.push(<IBox>createBoxParser(this.bytes.subarray(offset, offset + info.byteLength), info.type).parse());
-        offset += info.byteLength;
+      while (!this.isEnd()) {
+        info = getBoxInfo(this.readBytes(8));
+        this.skipBytes(-8);
+        ret.push(createBoxParser(this.readBytes(info.byteLength), info.type).parse());
       }
-
       return ret;
     }
   }
 
 
-  export class BoxParser extends Parser {
+  export class BoxParser extends BaseParser {
     static type = '';
+    byteLength: number;
+    type: string;
 
     constructor(bytes: Uint8Array) {
       super(bytes);
+      this.byteLength = this.bytes.length;
+      this.skipBytes(4);
+      this.type = this.readString(4);
     }
 
     parse(): IBox {
       return {
-        byteLength: this.bytes.length,
-        type: getBoxInfo(this.bytes, 0).type,
+        byteLength: this.byteLength,
+        type: this.type,
         bytes: this.bytes
       };
     }
@@ -64,8 +65,8 @@ module mp4.parser.box {
 
     constructor(bytes: Uint8Array) {
       super(bytes);
-      this.version = this.getVersion();
-      this.flags = this.getFlags();
+      this.version = this.readUint8();
+      this.flags = this.readUint24();
     }
 
     parse(): IFullBox {
@@ -74,15 +75,6 @@ module mp4.parser.box {
       ret.flags = this.flags;
       return ret;
     }
-
-    private getVersion(): number {
-      return this.bytes[8];
-    }
-
-    private getFlags(): number {
-      var view = new DataView2(this.bytes);
-      return view.getUint24(9);
-    }
   }
 
 
@@ -90,20 +82,11 @@ module mp4.parser.box {
     static type = 'ftyp';
     
     parse(): IFileTypeBox {
-      var view = new DataView2(this.bytes);
       var ret = <IFileTypeBox>super.parse();
-      var offset = 16;
-      var n = this.bytes.length;
-
-      ret.majorBrand = view.getString(8, 4);
-      ret.minorVersion = view.getUint32(12);
-      ret.compatibleBrands = <string[]>[];
-
-      while (offset < n) {
-        ret.compatibleBrands.push(view.getString(offset, 4));
-        offset += 4;
-      }
-
+      ret.majorBrand = this.readString(4);
+      ret.minorVersion = this.readUint32();
+      ret.compatibleBrands = [];
+      while (!this.isEnd()) ret.compatibleBrands.push(this.readString(4));
       return ret;
     }
   }
@@ -111,18 +94,14 @@ module mp4.parser.box {
 
   export class BoxListParser extends BoxParser {
     parse(): IBoxList {
-      var offset = 8;
       var ret = <IBoxList>super.parse();
       var boxes: IBox[] = [];
       var info: IBox;
-      var n = this.bytes.length;
-
-      while (offset < n) {
-        info = getBoxInfo(this.bytes, offset);
-        boxes.push(<IBox>createBoxParser(this.bytes.subarray(offset, offset + info.byteLength), info.type).parse());
-        offset += info.byteLength;
+      while (!this.isEnd()) {
+        info = getBoxInfo(this.readBytes(8));
+        this.skipBytes(-8);
+        boxes.push(createBoxParser(this.readBytes(info.byteLength), info.type).parse());
       }
-
       ret.boxes = boxes;
       return ret;
     }
@@ -149,20 +128,16 @@ module mp4.parser.box {
     static type = 'mvhd';
     
     parse(): IMovieHeaderBox {
-      var view = new DataView2(this.bytes);
-      var offset = 12;
       var ret = <IMovieHeaderBox>super.parse();
-      var matrix: number[] = [];
-      ret.creationTime = view.getUint32(offset);
-      ret.modificationTime = view.getUint32(offset += 4);
-      ret.timescale = view.getUint32(offset += 4);
-      ret.duration = view.getUint32(offset += 4);
-      ret.rate = view.getInt32(offset += 4);
-      ret.volume = view.getInt16(offset += 4);
-      offset += 12;
-      for (var i = 0; i < 9; ++i, offset += 4) matrix.push(view.getInt32(offset));
-      ret.matrix = matrix;
-      ret.nextTrackID = view.getUint32(offset += 24);
+      ret.matrix = [];
+      ret.creationTime = this.readUint32();
+      ret.modificationTime = this.readUint32();
+      ret.timescale = this.readUint32();
+      ret.duration = this.readUint32();
+      ret.rate = this.readUint32();
+      ret.volume = this.readUint16();
+      for (var i = 0; i < 9; ++i) ret.matrix.push(this.readInt32());
+      ret.nextTrackID = this.readUint32();
       return ret;
     }
   }
@@ -178,21 +153,17 @@ module mp4.parser.box {
 
     parse(): ITrackHeaderBox {
       var ret = <ITrackHeaderBox>super.parse();
-      var view = new DataView2(this.bytes);
-      var offset = 12;
-      var matrix: number[] = [];
-      ret.creationTime = view.getUint32(offset);
-      ret.modificationTime = view.getUint32(offset += 4);
-      ret.trackID = view.getUint32(offset += 4);
-      ret.duration = view.getUint32(offset += 8);
-      ret.layer = view.getInt16(offset += 12);
-      ret.alternateGroup = view.getInt16(offset += 2);
-      ret.volume = view.getInt16(offset += 2);
-      offset += 4;
-      for (var i = 0; i < 9; ++i, offset += 4) matrix.push(view.getInt32(offset));
-      ret.matrix = matrix;
-      ret.width = view.getUint32(offset);
-      ret.height = view.getUint32(offset += 4);
+      ret.matrix = [];
+      ret.creationTime = this.readUint32();
+      ret.modificationTime = this.readUint32();
+      ret.trackID = this.readUint32();
+      ret.duration = this.readUint32();
+      ret.layer = this.readInt16();
+      ret.alternateGroup = this.readInt16();
+      ret.volume = this.readInt16();
+      for (var i = 0; i < 9; ++i) ret.matrix.push(this.readInt32());
+      ret.width = this.readUint32();
+      ret.height = this.readUint32();
       return ret;
     }
   }
@@ -206,11 +177,8 @@ module mp4.parser.box {
   export class TrackReferenceTypeBox extends BoxParser {
     parse(): ITrackReferenceTypeBox {
       var ret = <ITrackReferenceTypeBox>super.parse();
-      var view = new DataView2(this.bytes);
-      var trackIDs: number[] = [];
-      var offset = 8;
-      var n = this.bytes.length;
-      for (; offset < n; offset += 4) trackIDs.push(view.getUint32(offset));
+      ret.trackIDs = [];
+      while (!this.isEnd()) ret.trackIDs.push(this.readUint32());
       return ret;
     }
   }
@@ -236,15 +204,12 @@ module mp4.parser.box {
 
     parse(): IMediaHeaderBox {
       var ret = <IMediaHeaderBox>super.parse();
-      var view = new DataView2(this.bytes);
-      var offset = 12;
-      var tmp: number;
-      ret.creationTime = view.getUint32(offset);
-      ret.modificationTime = view.getUint32(offset += 4);
-      ret.timescale = view.getUint32(offset += 4);
-      ret.duration = view.getUint32(offset += 4);
-      tmp = view.getUint16(offset += 4);
-      ret.language = String.fromCharCode.apply([tmp >> 10, (tmp >> 5) & 0x3F, tmp & 0x07]);
+      ret.creationTime = this.readUint32();
+      ret.modificationTime = this.readUint32();
+      ret.timescale = this.readUint32();
+      ret.duration = this.readUint32();
+      this.skipBits(1);
+      ret.language = String.fromCharCode.apply([this.readBits(5), this.readBits(5), this.readBits(5)]);
       return ret;
     }
   }
@@ -255,9 +220,9 @@ module mp4.parser.box {
 
     parse(): IHandlerBox {
       var ret = <IHandlerBox>super.parse();
-      var view = new DataView2(this.bytes);
-      handlerType = ret.handlerType = view.getString(16, 4);
-      ret.name = view.getString(32, this.bytes.length - 32);
+      this.skipBytes(4);
+      ret.handlerType = this.readString(4);
+      ret.name = this.readString();
       return ret;
     }
   }
@@ -274,12 +239,9 @@ module mp4.parser.box {
     parse(): IVideoMediaHeaderBox {
       var ret = <IVideoMediaHeaderBox>super.parse();
       var view = new DataView2(this.bytes);
-      var offset = 12;
-      var opcolor: number[] = [];
-      ret.graphicsmode = view.getUint16(offset);
-      offset += 2;
-      for (var i = 0; i < 3; ++i, offset += 2) opcolor.push(view.getUint16(offset));
-      ret.opcolor = opcolor;
+      ret.opcolor = [];
+      ret.graphicsmode = this.readUint16();
+      for (var i = 0; i < 3; ++i) ret.opcolor.push(this.readUint16());
       return ret;
     }
   }
@@ -290,7 +252,7 @@ module mp4.parser.box {
 
     parse(): ISoundMediaHeaderBox {
       var ret = <ISoundMediaHeaderBox>super.parse();
-      ret.balance = new DataView2(this.bytes).getInt16(12);
+      ret.balance = this.readInt16();
       return ret;
     }
   }
@@ -301,12 +263,10 @@ module mp4.parser.box {
 
     parse(): IHintMediaHeaderBox {
       var ret = <IHintMediaHeaderBox>super.parse();
-      var view = new DataView2(this.bytes);
-      var offset = 12;
-      ret.maxPDUsize = view.getUint16(offset);
-      ret.avgPDUsize = view.getUint16(offset += 4);
-      ret.maxbitrate = view.getUint16(offset += 4);
-      ret.avgbitrate = view.getUint16(offset += 4);
+      ret.maxPDUsize = this.readUint16();
+      ret.avgPDUsize = this.readUint16();
+      ret.maxbitrate = this.readUint32();
+      ret.avgbitrate = this.readUint32();
       return ret;
     }
   }
@@ -327,7 +287,7 @@ module mp4.parser.box {
 
     parse(): IDataEntryUrlBox {
       var ret = <IDataEntryUrlBox>super.parse();
-      ret.location = new DataView2(this.bytes).getUTF8String(12, this.bytes.length - 12);
+      ret.location = this.readUTF8StringNullTerminated();
       return ret;
     }
   }
@@ -338,9 +298,8 @@ module mp4.parser.box {
 
     parse(): IDataEntryUrnBox {
       var ret = <IDataEntryUrnBox>super.parse();
-      var s = new DataView2(this.bytes).getUTF8String(12, this.bytes.length - 12);
-      ret.name = s.split('\0')[0];
-      ret.location = s.split('\0')[1];
+      ret.name = this.readUTF8StringNullTerminated();
+      ret.location = this.readUTF8StringNullTerminated();
       return ret;
     }
   }
@@ -356,15 +315,13 @@ module mp4.parser.box {
 
     parse(): ITimeToSampleBox {
       var ret = <ITimeToSampleBox>super.parse();
-      var view = new DataView2(this.bytes);
-      var offset = 12;
-      var entryCount = view.getUint32(offset);
+      var entryCount = this.readUint32();
       ret.entryCount = entryCount;
       ret.entries = [];
       for (var i = 0; i < entryCount; ++i) {
         ret.entries.push({
-          sampleCount: view.getUint32(offset += 4),
-          sampleDelta: view.getUint32(offset += 4)
+          sampleCount: this.readUint32(),
+          sampleDelta: this.readUint32()
         });
       }
       return ret;
@@ -377,28 +334,25 @@ module mp4.parser.box {
 
     parse(): ICompositionOffsetBox {
       var ret = <ICompositionOffsetBox>super.parse();
-      var view = new DataView2(this.bytes);
-      var offset = 12;
-      var entryCount = view.getUint32(offset);
+      var entryCount = this.readUint32();
       ret.entryCount = entryCount;
       ret.entries = [];
       for (var i = 0; i < entryCount; ++i) {
         ret.entries.push({
-          sampleCount: view.getUint32(offset += 4),
-          sampleOffset: view.getUint32(offset += 4)
+          sampleCount: this.readUint32(),
+          sampleOffset: this.readUint32()
         });
       }
       return ret;
     }
   }
 
-  export class SampleEntryParser extends Parser {
+  export class SampleEntryParser extends BoxParser {
     parse(): ISampleEntry {
-      return {
-        dataReferenceIndex: new DataView2(this.bytes).getUint16(6),
-        byteLength: this.bytes.byteLength,
-        bytes: this.bytes
-      };
+      var ret = <ISampleEntry>super.parse();
+      this.skipBytes(6);
+      ret.dataReferenceIndex = this.readUint16();
+      return ret;
     }
   }
 
@@ -406,7 +360,7 @@ module mp4.parser.box {
   export class HintSampleEntryParser extends SampleEntryParser {
     parse(): IHintSampleEntry {
       var ret = <IHintSampleEntry>super.parse();
-      ret.data = this.bytes.subarray(8);
+      ret.data = this.bytes.subarray(16);
       return ret;
     }
   }
@@ -415,14 +369,13 @@ module mp4.parser.box {
   export class VisualSampleEntryParser extends SampleEntryParser {
     parse(): IVisualSampleEntry {
       var ret = <IVisualSampleEntry>super.parse();
-      var view = new DataView2(this.bytes);
-      var offset = 24;
-      ret.width = view.getUint16(offset);
-      ret.height = view.getUint16(offset += 2);
-      ret.horizresolution = view.getUint32(offset += 2);
-      ret.vertresolution = view.getUint32(offset += 4);
-      ret.compressorname = view.getString(offset += 4, 32);
-      ret.depth = view.getUint16(offset += 32);
+      this.skipBytes(16);
+      ret.width = this.readUint16();
+      ret.height = this.readUint16();
+      ret.horizresolution = this.readUint32();
+      ret.vertresolution = this.readUint32();
+      ret.compressorname = this.readString(32);
+      ret.depth = this.readUint16();
       return ret;
     }
   }
@@ -431,11 +384,61 @@ module mp4.parser.box {
   export class AudioSampleEntryParser extends SampleEntryParser {
     parse(): IAudioSampleEntry {
       var ret = <IAudioSampleEntry>super.parse();
-      var view = new DataView2(this.bytes);
-      var offset = 16;
-      ret.channelcount = view.getUint16(offset);
-      ret.samplesize = view.getUint16(offset += 2);
-      ret.samplerate = view.getUint32(offset += 6);
+      this.skipBytes(8);
+      ret.channelcount = this.readUint16();
+      ret.samplesize = this.readUint16();
+      this.skipBytes(4);
+      ret.samplerate = this.readUint32();
+      return ret;
+    }
+  }
+
+
+  export class ESDBoxParser extends FullBoxParser {
+    static type = 'esds';
+
+    parse(): IESDBox {
+      var ret = <IESDBox>super.parse();
+      var descrInfo = Descriptor.getDescrInfo(this.bytes, 12);
+      ret.esDescr = new Descriptor.ESDescriptorParser(this.readBytes(descrInfo.byteLength)).parse();
+      return ret;
+    }
+  }
+
+  export class MP4VisualSampleEntryParser extends VisualSampleEntryParser {
+    static type = 'mp4v';
+
+    parse(): IMP4VisualSampleEntry {
+      var ret = <IMP4VisualSampleEntry>super.parse();
+      var info = getBoxInfo(this.readBytes(8));
+      this.skipBytes(-8);
+      ret.esBox = new ESDBoxParser(this.readBytes(info.byteLength)).parse();
+      return ret;
+    }
+  }
+
+
+  export class MP4AudioSampleEntryParser extends AudioSampleEntryParser {
+    static type = 'mp4a';
+
+    parse(): IMP4AudioSampleEntry {
+      var ret = <IMP4AudioSampleEntry>super.parse();
+      var info = getBoxInfo(this.readBytes(8));
+      this.skipBytes(-8);
+      ret.esBox = new ESDBoxParser(this.readBytes(info.byteLength)).parse();
+      return ret;
+    }
+  }
+
+
+  export class MpegSampleEntryParser extends SampleEntryParser {
+    static type = 'mp4s';
+
+    parse(): IMpegSampleEntry {
+      var ret = <IMpegSampleEntry>super.parse();
+      var info = getBoxInfo(this.readBytes(8));
+      this.skipBytes(-8);
+      ret.esBox = new ESDBoxParser(this.readBytes(info.byteLength)).parse();
       return ret;
     }
   }
@@ -446,15 +449,13 @@ module mp4.parser.box {
 
     parse(): ISampleDescriptionBox {
       var ret = <ISampleDescriptionBox>super.parse();
-      var offset = 12;
-      var entryCount = new DataView2(this.bytes).getUint32(offset);
+      var entryCount = this.readUint32();
       ret.entryCount = entryCount;
-      offset += 4;
       ret.boxes = [];
       for (var i = 0; i < entryCount; ++i) {
-        var info = getBoxInfo(this.bytes, offset);
-        ret.boxes.push(createBoxParser(this.bytes.subarray(offset, offset + info.byteLength), info.type).parse())
-        offset += info.byteLength;
+        var info = getBoxInfo(this.readBytes(8));
+        this.skipBytes(-8);
+        ret.boxes.push(createBoxParser(this.readBytes(info.byteLength), info.type).parse());
       }
       return ret;
     }
@@ -466,13 +467,11 @@ module mp4.parser.box {
 
     parse(): ISampleSizeBox {
       var ret = <ISampleSizeBox>super.parse();
-      var view = new DataView2(this.bytes);
-      var offset = 12;
-      var sampleSize = view.getUint32(offset);
-      var sampleCount = view.getUint32(offset += 4);
+      var sampleSize = this.readUint32();
+      var sampleCount = this.readUint32();
       if (sampleSize === 0) {
         ret.entrySizes = [];
-        for (var i = 0; i < sampleCount; ++i) ret.entrySizes.push(view.getUint32(offset += 4));
+        for (var i = 0; i < sampleCount; ++i) ret.entrySizes.push(this.readUint32());
       }
       ret.sampleSize = sampleSize;
       ret.sampleCount = sampleCount;
@@ -501,22 +500,22 @@ module mp4.parser.box {
     }
   }
 
+
   export class ChunkOffsetBoxParser extends FullBoxParser {
     static type = 'stco';
 
     parse(): IChunkOffsetBox {
       var ret = <IChunkOffsetBox>super.parse();
-      var view = new DataView2(this.bytes);
-      var offset = 12;
-      var entryCount = view.getUint32(offset);
+      var entryCount = this.readUint32();
       ret.entryCount = entryCount;
       ret.chunkOffsets = [];
       for (var i = 0; i < entryCount; ++i) {
-        ret.chunkOffsets.push(view.getUint32(offset += 4));
+        ret.chunkOffsets.push(this.readUint32());
       }
       return ret;
     }
   }
+
 
   /**
    * Create a box parser by the box type.
@@ -526,8 +525,8 @@ module mp4.parser.box {
   export var createBoxParser = (() => {
     var Parsers = {};
 
-    Object.getOwnPropertyNames(box).forEach((name: string) => {
-      var Parser = box[name];
+    Object.keys(Box).forEach((key: string) => {
+      var Parser = Box[key];
       if (Parser.type) Parsers[Parser.type] = Parser;
     });
 

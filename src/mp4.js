@@ -1,7 +1,7 @@
-var mp4;
-(function (mp4) {
-    mp4.parse = function (bytes) {
-        return new mp4.parser.box.RootParser(bytes).parse();
+var Mp4;
+(function (Mp4) {
+    Mp4.parse = function (bytes) {
+        return new Mp4.Parser.Box.RootParser(bytes).parse();
     };
-})(mp4 || (mp4 = {}));
+})(Mp4 || (Mp4 = {}));
 //@ sourceMappingURL=mp4.js.map

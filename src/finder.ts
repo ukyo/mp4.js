@@ -1,4 +1,4 @@
-module mp4 {
+module Mp4 {
   
   export class Finder {
     constructor(public boxes: IBox[]) { }
@@ -7,6 +7,7 @@ module mp4 {
       var boxes: IBox[] = [];
       var find = (box) => {
         if (box.type === type) boxes.push(box);
+        // if (Object.keys(box).length) Object.keys(box).forEach(find);
         if (box.boxes) box.boxes.forEach(find);
       };
       this.boxes.forEach(find);

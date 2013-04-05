@@ -6,8 +6,8 @@ asyncTest('read m4a', function () {
     xhr.open('GET', '01 Hyperventilate.m4a');
     xhr.onloadend = function () {
         ok(xhr.response instanceof ArrayBuffer);
-        var result = mp4.parse(new Uint8Array(xhr.response));
-        finder = new mp4.Finder(result);
+        var result = Mp4.parse(new Uint8Array(xhr.response));
+        finder = new Mp4.Finder(result);
         console.log(result);
         start();
     };

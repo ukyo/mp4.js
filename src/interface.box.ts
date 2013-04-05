@@ -1,4 +1,4 @@
-module mp4 {
+module Mp4 {
 
   export interface IBox {
     byteLength: number; // unsigned int(32)
@@ -130,7 +130,7 @@ module mp4 {
     }[];
   }
 
-  export interface ISampleEntry {
+  export interface ISampleEntry extends IBox {
     dataReferenceIndex: number; // unsigned int(16)
     byteLength: number;
     bytes?: Uint8Array;
@@ -155,6 +155,18 @@ module mp4 {
     samplesize: number; // unsigned int(16)
     samplerate: number; // unsigned int(32)
   }
+
+  export interface IESDBox extends IFullBox {
+    esDescr: IESDescriptor;
+  }
+
+  export interface IMpegSampleEntry extends ISampleEntry {
+    esBox: IESDBox;
+  }
+
+  export interface IMP4VisualSampleEntry extends IVisualSampleEntry, IMpegSampleEntry {}
+
+  export interface IMP4AudioSampleEntry extends IAudioSampleEntry, IMpegSampleEntry {}
   
   export interface ISampleDescriptionBox extends IFullBox, IBoxList {
     entryCount: number; // unsigned int(32)
@@ -439,7 +451,7 @@ module mp4 {
   }
 
   export interface IIPMPInfoBox extends IFullBox {
-    ipmpDesc: IIPMPDescriptor[];
+    ipmpDesc: IIPMPDescriptorPointer[];
   }
 
   export interface ISchemeInformationBox extends IFullBox {

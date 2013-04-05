@@ -1,4 +1,4 @@
-module mp4 {
+module Mp4 {
   var toString = Object.prototype.toString;
   var _memory8 = new Uint8Array(0x8000);
   var _memory16 = new Uint16Array(_memory8.buffer);

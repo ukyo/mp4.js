@@ -136,7 +136,10 @@ module Mp4.Parser.Box {
       ret.duration = this.readUint32();
       ret.rate = this.readUint32();
       ret.volume = this.readUint16();
+      this.skipBytes(2);
+      this.skipBytes(4 * 2);
       for (var i = 0; i < 9; ++i) ret.matrix.push(this.readInt32());
+      this.skipBytes(4 * 6);
       ret.nextTrackID = this.readUint32();
       return ret;
     }
@@ -157,10 +160,13 @@ module Mp4.Parser.Box {
       ret.creationTime = this.readUint32();
       ret.modificationTime = this.readUint32();
       ret.trackID = this.readUint32();
+      this.skipBytes(4);
       ret.duration = this.readUint32();
+      this.skipBytes(4 * 2);
       ret.layer = this.readInt16();
       ret.alternateGroup = this.readInt16();
-      ret.volume = this.readInt16();
+      ret.volume = this.readInt16() / 0x100;
+      this.skipBytes(2);
       for (var i = 0; i < 9; ++i) ret.matrix.push(this.readInt32());
       ret.width = this.readUint32();
       ret.height = this.readUint32();
@@ -209,7 +215,7 @@ module Mp4.Parser.Box {
       ret.timescale = this.readUint32();
       ret.duration = this.readUint32();
       this.skipBits(1);
-      ret.language = String.fromCharCode.apply([this.readBits(5), this.readBits(5), this.readBits(5)]);
+      ret.language = String.fromCharCode.apply(null, [this.readBits(5), this.readBits(5), this.readBits(5)].map(x => x + 0x60));
       return ret;
     }
   }
@@ -388,7 +394,7 @@ module Mp4.Parser.Box {
       ret.channelcount = this.readUint16();
       ret.samplesize = this.readUint16();
       this.skipBytes(4);
-      ret.samplerate = this.readUint32();
+      ret.samplerate = this.readUint32() >>> 16;
       return ret;
     }
   }
@@ -470,8 +476,9 @@ module Mp4.Parser.Box {
       var sampleSize = this.readUint32();
       var sampleCount = this.readUint32();
       if (sampleSize === 0) {
-        ret.entrySizes = [];
-        for (var i = 0; i < sampleCount; ++i) ret.entrySizes.push(this.readUint32());
+        ret.sampleSizes = [];
+        for (var i = 0; i < sampleCount; ++i)
+          ret.sampleSizes.push(this.readUint32());
       }
       ret.sampleSize = sampleSize;
       ret.sampleCount = sampleCount;

@@ -52,7 +52,7 @@ var Mp4;
                 while(n > 0) {
                     m = n > max ? max : n;
                     ret *= POW25;
-                    byteOffset = this.bitOffset >>> 8;
+                    byteOffset = this.bitOffset >>> 3;
                     needBytes = Math.ceil((this.bitOffset % 8 + m) / 8);
                     switch(needBytes) {
                         case 1:
@@ -69,82 +69,82 @@ var Mp4;
                             break;
                     }
                     ret += (tmp >>> (needBytes * 8 - (this.bitOffset % 8 + m))) & BIT_MASKS[m];
-                    this.bitOffset += m;
+                    this.skipBits(m);
                     n -= m;
                 }
                 return ret;
             };
             BaseParser.prototype.readUint8 = function () {
-                var ret = this.view.getUint8(this.bitOffset >>> 3);
-                this.bitOffset += 8;
+                var ret = this.view.getUint8(this.getByteOffset());
+                this.skipBytes(1);
                 return ret;
             };
             BaseParser.prototype.readInt8 = function () {
-                var ret = this.view.getInt8(this.bitOffset >>> 3);
-                this.bitOffset += 8;
+                var ret = this.view.getInt8(this.getByteOffset());
+                this.skipBytes(1);
                 return ret;
             };
             BaseParser.prototype.readUint16 = function () {
-                var ret = this.view.getUint16(this.bitOffset >>> 3);
-                this.bitOffset += 16;
+                var ret = this.view.getUint16(this.getByteOffset());
+                this.skipBytes(2);
                 return ret;
             };
             BaseParser.prototype.readInt16 = function () {
-                var ret = this.view.getInt16(this.bitOffset >>> 3);
-                this.bitOffset += 16;
+                var ret = this.view.getInt16(this.getByteOffset());
+                this.skipBytes(2);
                 return ret;
             };
             BaseParser.prototype.readUint24 = function () {
-                var ret = this.view.getUint24(this.bitOffset >>> 3);
-                this.bitOffset += 24;
+                var ret = this.view.getUint24(this.getByteOffset());
+                this.skipBytes(3);
                 return ret;
             };
             BaseParser.prototype.readInt24 = function () {
-                var ret = this.view.getInt24(this.bitOffset >>> 3);
-                this.bitOffset += 24;
+                var ret = this.view.getInt24(this.getByteOffset());
+                this.skipBytes(3);
                 return ret;
             };
             BaseParser.prototype.readUint32 = function () {
-                var ret = this.view.getUint32(this.bitOffset >>> 3);
-                this.bitOffset += 32;
+                var ret = this.view.getUint32(this.getByteOffset());
+                this.skipBytes(4);
                 return ret;
             };
             BaseParser.prototype.readInt32 = function () {
-                var ret = this.view.getInt32(this.bitOffset >>> 3);
-                this.bitOffset += 32;
+                var ret = this.view.getInt32(this.getByteOffset());
+                this.skipBytes(4);
                 return ret;
             };
             BaseParser.prototype.readFloat32 = function () {
-                var ret = this.view.getFloat32(this.bitOffset >>> 3);
-                this.bitOffset += 32;
+                var ret = this.view.getFloat32(this.getByteOffset());
+                this.skipBytes(4);
                 return ret;
             };
             BaseParser.prototype.readFloat64 = function () {
-                var ret = this.view.getFloat64(this.bitOffset >>> 3);
-                this.bitOffset += 64;
+                var ret = this.view.getFloat64(this.getByteOffset());
+                this.skipBytes(8);
                 return ret;
             };
             BaseParser.prototype.readBytes = function (n) {
-                var byteOffset = this.bitOffset >>> 3;
+                var byteOffset = this.getByteOffset();
                 var ret = this.bytes.subarray(byteOffset, byteOffset + n);
-                this.bitOffset += n << 3;
+                this.skipBytes(n);
                 return ret;
             };
             BaseParser.prototype.readString = function (n) {
                 if (typeof n === "undefined") { n = 0; }
                 var ret;
                 if(n === 0) {
-                    var bytes = this.bytes.subarray(this.bitOffset >>> 3);
+                    var bytes = this.bytes.subarray(this.getByteOffset());
                     ret = String.fromCharCode.apply(null, bytes);
                     n = bytes.length;
                 } else {
-                    ret = this.view.getString(this.bitOffset >>> 3, n);
+                    ret = this.view.getString(this.getByteOffset(), n);
                 }
                 this.skipBytes(n);
                 return ret;
             };
             BaseParser.prototype.readStringNullTerminated = function () {
-                var bytes = this.bytes.subarray(this.bitOffset >>> 3);
+                var bytes = this.bytes.subarray(this.getByteOffset());
                 var i = 0;
                 while(bytes[i++] === 0) {
                     ;
@@ -153,7 +153,7 @@ var Mp4;
                 return String.fromCharCode.apply(null, bytes.subarray(0, i - 1));
             };
             BaseParser.prototype.readUTF8StringNullTerminated = function () {
-                var bytes = this.bytes.subarray(this.bitOffset >>> 3);
+                var bytes = this.bytes.subarray(this.getByteOffset());
                 var i = 0;
                 while(bytes[i++] === 0) {
                     ;
@@ -171,7 +171,7 @@ var Mp4;
                 return this.bitOffset >>> 3;
             };
             BaseParser.prototype.isEnd = function () {
-                return this.bitOffset / 8 === this.bytes.length;
+                return this.bitOffset / 8 >= this.bytes.length;
             };
             return BaseParser;
         })();

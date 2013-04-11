@@ -1,14 +1,14 @@
 module Mp4 {
 
   export interface IBox {
-    byteLength: number; // unsigned int(32)
-    type: string; // unsigned int(32)
+    byteLength?: number; // unsigned int(32)
+    type?: string; // unsigned int(32)
     bytes?: Uint8Array;
   }
 
   export interface IFullBox extends IBox {
-    version: number; // unsigned int(8)
-    flags: number; // bit(24)
+    version?: number; // unsigned int(8)
+    flags?: number; // bit(24)
   }
 
   export interface IFileTypeBox extends IBox {
@@ -66,7 +66,7 @@ module Mp4 {
     modificationTime: number; // unsigned int(32)
     timescale: number; // unsigned int(32)
     duration: number; // unsigned int(32)
-    language: number[];
+    language: string;
   }
 
   export interface IHandlerBox extends IFullBox {
@@ -109,7 +109,7 @@ module Mp4 {
 
   export interface IDataReferenceBox extends IFullBox {
     entryCount: number; // unsigned int(32)
-    dataEntries: IDataEntryBox[];
+    entries: IDataEntryBox[];
   }
 
   export interface ISampleTableBox extends IBoxList {}
@@ -132,8 +132,6 @@ module Mp4 {
 
   export interface ISampleEntry extends IBox {
     dataReferenceIndex: number; // unsigned int(16)
-    byteLength: number;
-    bytes?: Uint8Array;
   }
 
   export interface IHintSampleEntry extends ISampleEntry {
@@ -175,7 +173,7 @@ module Mp4 {
   export interface ISampleSizeBox extends IFullBox {
     sampleSize: number; // unsigned int(32)
     sampleCount: number; // unsigned int(32)
-    entrySizes: number[]; // unsigned int(32)[]
+    sampleSizes: number[]; // unsigned int(32)[]
   }
 
   export interface ICompactSampleSizeBox extends IFullBox {

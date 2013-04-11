@@ -1,22 +1,55 @@
 module Mp4 {
   
   export class Finder {
-    constructor(public boxes: IBox[]) { }
+    constructor(public tree: any) { }
 
-    findBoxes(type: string): IBox[] {
-      var boxes: IBox[] = [];
-      var find = (box) => {
-        if (box.type === type) boxes.push(box);
-        // if (Object.keys(box).length) Object.keys(box).forEach(find);
-        if (box.boxes) box.boxes.forEach(find);
+    findOne(type: string): IBox {
+      var box: IBox;
+      var find = tree => {
+        if (box) return;
+        switch (typeof tree) {
+          case 'number':
+          case 'string':
+          case 'boolean': return;
+        }
+        if (tree.type === type) {
+          return box = tree;
+        }
+        if (tree.buffer) return;
+        Object.keys(tree).forEach(key => {
+          var prop = tree[key];
+          if (Array.isArray(prop)) {
+            prop.some(find);
+          } else if (prop.type) {
+            find(prop);
+          }
+        });
       };
-      this.boxes.forEach(find);
-      return boxes;
+      find(this.tree);
+      return box;
     }
 
-    findDescriptors(tag: number): IDescriptor[] {
-
-      return <IDescriptor[]>[];
+    findAll(type: string): IBox[] {
+      var boxes: IBox[] = [];
+      var find = tree => {
+        switch (typeof tree) {
+          case 'number':
+          case 'string':
+          case 'boolean': return;
+        }
+        if (tree.type === type) boxes.push(tree);
+        if (tree.buffer) return;
+        Object.keys(tree).forEach(key => {
+          var prop = tree[key];
+          if (Array.isArray(prop)) {
+            prop.forEach(find);
+          } else {
+            find(prop);
+          }
+        });
+      };
+      find(this.tree);
+      return boxes;
     }
   }
 

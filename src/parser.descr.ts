@@ -76,7 +76,7 @@ module Mp4.Parser.Descriptor {
       ret.profileLevelIndicationIndexDescrs = [];
 
       while (!this.isEnd()) {
-        info = getDescrInfo(this.bytes.subarray(this.getByteOffset()));
+        info = getDescrInfo(this.bytes.subarray(this.byteOffset()));
         descrParser = createDescriptorParser(this.readBytes(info.byteLength), info.tag);
         descr = descrParser.parse();
         if (descrParser instanceof DecoderSpecificInfoParser) {
@@ -183,7 +183,7 @@ module Mp4.Parser.Descriptor {
       ret.extDescrs = [];
 
       while (!this.isEnd()) {
-        info = getDescrInfo(this.bytes.subarray(this.getByteOffset()));
+        info = getDescrInfo(this.bytes.subarray(this.byteOffset()));
         descrParser = createDescriptorParser(this.readBytes(info.byteLength), info.tag);
         descr = descrParser.parse();
         if (descrParser instanceof DecoderConfigDescriptorParser) {

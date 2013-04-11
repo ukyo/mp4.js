@@ -41,7 +41,7 @@ module Mp4.Parser {
       while (n > 0) {
         m = n > max ? max : n;
         ret *= POW25;
-        byteOffset = this.bitOffset >>> 8;
+        byteOffset = this.bitOffset >>> 3;
         needBytes = Math.ceil((this.bitOffset % 8 + m) / 8);
         switch (needBytes) {
           case 1: tmp = this.view.getUint8(byteOffset); break;
@@ -58,67 +58,67 @@ module Mp4.Parser {
     }
 
     readUint8(): number {
-      var ret = this.view.getUint8(this.getByteOffset());
+      var ret = this.view.getUint8(this.byteOffset);
       this.skipBytes(1);
       return ret;
     }
 
     readInt8(): number {
-      var ret = this.view.getInt8(this.getByteOffset());
+      var ret = this.view.getInt8(this.byteOffset);
       this.skipBytes(1);
       return ret;
     }
 
     readUint16(): number {
-      var ret = this.view.getUint16(this.getByteOffset());
+      var ret = this.view.getUint16(this.byteOffset);
       this.skipBytes(2);
       return ret;
     }
 
     readInt16(): number {
-      var ret = this.view.getInt16(this.getByteOffset());
+      var ret = this.view.getInt16(this.byteOffset);
       this.skipBytes(2);
       return ret;
     }
 
     readUint24(): number {
-      var ret = this.view.getUint24(this.getByteOffset());
+      var ret = this.view.getUint24(this.byteOffset);
       this.skipBytes(3);
       return ret;
     }
 
     readInt24(): number {
-      var ret = this.view.getInt24(this.getByteOffset());
+      var ret = this.view.getInt24(this.byteOffset);
       this.skipBytes(3);
       return ret;
     }
 
     readUint32(): number {
-      var ret = this.view.getUint32(this.getByteOffset());
+      var ret = this.view.getUint32(this.byteOffset);
       this.skipBytes(4);
       return ret;
     }
 
     readInt32(): number {
-      var ret = this.view.getInt32(this.getByteOffset());
+      var ret = this.view.getInt32(this.byteOffset);
       this.skipBytes(4);
       return ret;
     }
     
     readFloat32(): number {
-      var ret = this.view.getFloat32(this.getByteOffset());
+      var ret = this.view.getFloat32(this.byteOffset);
       this.skipBytes(4);
       return ret;
     }
 
     readFloat64(): number {
-      var ret = this.view.getFloat64(this.getByteOffset());
+      var ret = this.view.getFloat64(this.byteOffset);
       this.skipBytes(8);
       return ret;
     }
 
     readBytes(n: number): Uint8Array {
-      var byteOffset = this.getByteOffset();
+      var byteOffset = this.byteOffset;
       var ret = this.bytes.subarray(byteOffset, byteOffset + n);
       this.skipBytes(n);
       return ret;
@@ -127,11 +127,11 @@ module Mp4.Parser {
     readString(n: number = 0): string {
       var ret: string;
       if (n === 0) {
-        var bytes = this.bytes.subarray(this.getByteOffset());
+        var bytes = this.bytes.subarray(this.byteOffset);
         ret = String.fromCharCode.apply(null, bytes);
         n = bytes.length;
       } else {
-        ret = this.view.getString(this.getByteOffset(), n);
+        ret = this.view.getString(this.byteOffset, n);
       }
       this.skipBytes(n);
       return ret;
@@ -139,7 +139,7 @@ module Mp4.Parser {
 
 
     readStringNullTerminated(): string {
-      var bytes = this.bytes.subarray(this.getByteOffset());
+      var bytes = this.bytes.subarray(this.byteOffset);
       var i = 0;
       while (bytes[i++] === 0);
       this.skipBytes(i);
@@ -147,7 +147,7 @@ module Mp4.Parser {
     }
 
     readUTF8StringNullTerminated(): string {
-      var bytes = this.bytes.subarray(this.getByteOffset());
+      var bytes = this.bytes.subarray(this.byteOffset);
       var i = 0;
       while (bytes[i++] === 0);
       this.skipBytes(i);
@@ -162,7 +162,7 @@ module Mp4.Parser {
       this.bitOffset += n * 8;
     }
 
-    getByteOffset(): number {
+    get byteOffset(): number {
       return this.bitOffset >>> 3;
     }
 

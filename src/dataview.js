@@ -185,7 +185,7 @@ var mp4;
                         buff[idx] |= bytes[++i] & 0x3F;
                     }
                 }
-                ret += String.fromCharCode.apply(buff.subarray(0, idx));
+                ret += String.fromCharCode.apply(null, buff.subarray(0, idx));
             }
             return ret;
         };

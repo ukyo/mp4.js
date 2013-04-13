@@ -228,7 +228,8 @@ module mp4.parser {
       var ret = <IHandlerBox>super.parse();
       this.skipBytes(4);
       ret.handlerType = this.readString(4);
-      ret.name = this.readString();
+      this.skipBytes(4 * 3);
+      ret.name = this.readUTF8StringNullTerminated();
       return ret;
     }
   }
@@ -283,8 +284,25 @@ module mp4.parser {
   }
 
 
-  export class DataReferenceBoxParser extends BoxListParser {
+  export class DataInformationBoxParser extends BoxListParser {
     static type = 'dinf';
+  }
+
+
+  export class DataReferenceBoxParser extends FullBoxParser {
+    static type = 'dref';
+
+    parse(): IDataReferenceBox {
+      var ret = <IDataReferenceBox>super.parse();
+      ret.entryCount = this.readUint32();
+      ret.entries = [];
+      while (!this.isEnd()) {
+        var info = getBoxInfo(this.readBytes(8));
+        this.skipBytes(-8);
+        ret.entries.push(<IDataEntryBox>createBoxParser(this.readBytes(info.byteLength), info.type).parse());
+      }
+      return ret;
+    }
   }
 
 

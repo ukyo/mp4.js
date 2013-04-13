@@ -3,7 +3,7 @@
 module.exports = function (grunt) {
   grunt.initConfig({
     typescript: {
-      scripts: {
+      mp4: {
         src: [
           'src/dataview.ts',
           'src/interface.box.ts',
@@ -28,9 +28,9 @@ module.exports = function (grunt) {
     },
 
     watch: {
-      scripts: {
-        files: ['<%= typescript.scripts.src %>'],
-        tasks: ['typescript:srcipts']
+      mp4: {
+        files: ['<%= typescript.mp4.src %>'],
+        tasks: ['typescript:mp4']
       },
       tests: {
         files: ['<%= typescript.tests.src %>'],

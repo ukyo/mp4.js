@@ -144,7 +144,10 @@ var mp4;
             BaseParser.prototype.readStringNullTerminated = function () {
                 var bytes = this.bytes.subarray(this.byteOffset);
                 var i = 0;
-                while(bytes[i++] === 0) {
+                if(!bytes.byteLength) {
+                    return '';
+                }
+                while(bytes[i++] !== 0) {
                     ;
                 }
                 this.skipBytes(i);
@@ -153,11 +156,14 @@ var mp4;
             BaseParser.prototype.readUTF8StringNullTerminated = function () {
                 var bytes = this.bytes.subarray(this.byteOffset);
                 var i = 0;
-                while(bytes[i++] === 0) {
+                if(!bytes.byteLength) {
+                    return '';
+                }
+                while(bytes[i++] !== 0) {
                     ;
                 }
                 this.skipBytes(i);
-                return new mp4.DataView2(bytes).getUTF8String(0, i - 1);
+                return mp4.DataView2.UTF8BytesToString(bytes.subarray(0, i - 1));
             };
             BaseParser.prototype.skipBits = function (n) {
                 this.bitOffset += n;

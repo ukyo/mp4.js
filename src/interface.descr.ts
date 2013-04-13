@@ -1,4 +1,4 @@
-module Mp4 {
+module mp4 {
   
   export interface IDescriptor {
     tag: number;

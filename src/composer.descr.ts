@@ -1,3 +1,3 @@
-module Mp4.Composer.Descriptor {
+module mp4.composer {
 
 }

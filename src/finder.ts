@@ -1,4 +1,4 @@
-module Mp4 {
+module mp4 {
   
   export class Finder {
     constructor(public tree: any) { }

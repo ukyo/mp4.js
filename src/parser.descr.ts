@@ -1,4 +1,4 @@
-module Mp4.Parser.Descriptor {
+module mp4.parser {
 
   export var getDescrInfo = (bytes: Uint8Array, offset: number = 0): IDescriptor => {
     var tag = bytes[offset++];
@@ -76,7 +76,7 @@ module Mp4.Parser.Descriptor {
       ret.profileLevelIndicationIndexDescrs = [];
 
       while (!this.isEnd()) {
-        info = getDescrInfo(this.bytes.subarray(this.byteOffset()));
+        info = getDescrInfo(this.bytes.subarray(this.byteOffset));
         descrParser = createDescriptorParser(this.readBytes(info.byteLength), info.tag);
         descr = descrParser.parse();
         if (descrParser instanceof DecoderSpecificInfoParser) {
@@ -183,7 +183,7 @@ module Mp4.Parser.Descriptor {
       ret.extDescrs = [];
 
       while (!this.isEnd()) {
-        info = getDescrInfo(this.bytes.subarray(this.byteOffset()));
+        info = getDescrInfo(this.bytes.subarray(this.byteOffset));
         descrParser = createDescriptorParser(this.readBytes(info.byteLength), info.tag);
         descr = descrParser.parse();
         if (descrParser instanceof DecoderConfigDescriptorParser) {
@@ -212,8 +212,8 @@ module Mp4.Parser.Descriptor {
 
   export var createDescriptorParser = (() => {
     var Parsers = {};
-    Object.keys(Descriptor).forEach((key) => {
-      var Parser = Descriptor[key];
+    Object.keys(parser).forEach((key) => {
+      var Parser = parser[key];
       if (Parser.tag != null) {
         if (Array.isArray(Parser.tag)) {
           Parser.tag.forEach(tag => Parsers[tag] = Parser);

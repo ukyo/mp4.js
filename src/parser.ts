@@ -1,4 +1,4 @@
-module Mp4.Parser {
+module mp4.parser {
 
   var BIT_MASKS: number[] = [
     0x00000000,
@@ -13,6 +13,7 @@ module Mp4.Parser {
   ];
 
   var POW25 = Math.pow(2, 25);
+
 
   export interface IParser {
     parse(): any;
@@ -32,7 +33,6 @@ module Mp4.Parser {
       if (n <= 0) throw new Error();
       
       var tmp: number;
-      var byteOffset: number;
       var needBytes: number;
       var m: number;
       var max = 25;
@@ -41,13 +41,12 @@ module Mp4.Parser {
       while (n > 0) {
         m = n > max ? max : n;
         ret *= POW25;
-        byteOffset = this.bitOffset >>> 3;
         needBytes = Math.ceil((this.bitOffset % 8 + m) / 8);
         switch (needBytes) {
-          case 1: tmp = this.view.getUint8(byteOffset); break;
-          case 2: tmp = this.view.getUint16(byteOffset); break;
-          case 3: tmp = this.view.getUint24(byteOffset); break;
-          case 4: tmp = this.view.getUint32(byteOffset); break;
+          case 1: tmp = this.view.getUint8(this.byteOffset); break;
+          case 2: tmp = this.view.getUint16(this.byteOffset); break;
+          case 3: tmp = this.view.getUint24(this.byteOffset); break;
+          case 4: tmp = this.view.getUint32(this.byteOffset); break;
         }
         ret += (tmp >>> (needBytes * 8 - (this.bitOffset % 8 + m))) & BIT_MASKS[m];
         this.skipBits(m);

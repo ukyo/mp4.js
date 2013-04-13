@@ -1,4 +1,4 @@
-module Mp4 {
+module mp4 {
   var toString = Object.prototype.toString;
   var BUFF8 = new Uint8Array(0x8000);
   var BUFF16 = new Uint16Array(BUFF8.buffer);
@@ -219,7 +219,7 @@ module Mp4 {
       return UTF8Bytes.length;
     }
 
-    getUint24(byteOffset: number, littleEndian: bool = false) {
+    getUint24(byteOffset: number, littleEndian: bool = false): number {
       var b = new Uint8Array(this.buffer, this.byteOffset + byteOffset);
       return littleEndian ? (b[0] | (b[1] << 8) | (b[2] << 16)) : (b[2] | (b[1] << 8) | (b[0] << 16));
     }
@@ -237,7 +237,7 @@ module Mp4 {
       }
     }
 
-    getInt24(byteOffset: number, littleEndian: bool = false) {
+    getInt24(byteOffset: number, littleEndian: bool = false): number {
       var v = this.getUint24(byteOffset, littleEndian);
       return v & 0x800000 ? v - 0x1000000 : v;
     }

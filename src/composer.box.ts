@@ -1,4 +1,4 @@
-module Mp4.Composer.Box {
+module mp4.composer {
 
   export interface IBox {}
 
@@ -414,8 +414,8 @@ module Mp4.Composer.Box {
 
   var createBoxComposer = (() => {
     var Composers = {};
-    Object.keys(Box).forEach(key => {
-      var Composer = Box[key];
+    Object.keys(composer).forEach(key => {
+      var Composer = composer[key];
       if (Composer.type) Composers[Composer.type] = Composer;
     });
     return (box: IBox): BoxComposer => new Composers[box.type](box);

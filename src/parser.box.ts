@@ -1,4 +1,4 @@
-module Mp4.Parser.Box {
+module mp4.parser {
 
   var handlerType: string;
 
@@ -405,8 +405,8 @@ module Mp4.Parser.Box {
 
     parse(): IESDBox {
       var ret = <IESDBox>super.parse();
-      var descrInfo = Descriptor.getDescrInfo(this.bytes, 12);
-      ret.esDescr = new Descriptor.ESDescriptorParser(this.readBytes(descrInfo.byteLength)).parse();
+      var descrInfo = getDescrInfo(this.bytes, 12);
+      ret.esDescr = new ESDescriptorParser(this.readBytes(descrInfo.byteLength)).parse();
       return ret;
     }
   }
@@ -532,8 +532,8 @@ module Mp4.Parser.Box {
   export var createBoxParser = (() => {
     var Parsers = {};
 
-    Object.keys(Box).forEach((key: string) => {
-      var Parser = Box[key];
+    Object.keys(parser).forEach((key: string) => {
+      var Parser = parser[key];
       if (Parser.type) Parsers[Parser.type] = Parser;
     });
 

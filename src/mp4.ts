@@ -9,7 +9,7 @@
 /// <reference path="composer.descr.ts" />
 /// <reference path="composer.box.ts" />
 
-module Mp4 {
+module mp4 {
 
   var SAMPLERATE_TABLE = [
     96000, 88200, 64000, 48000,
@@ -18,7 +18,7 @@ module Mp4 {
   ];
 
   export var parse = (bytes: Uint8Array): IBox[] => {
-    return new Mp4.Parser.Box.RootParser(bytes).parse();
+    return new mp4.parser.RootParser(bytes).parse();
   };
 
   var getChunks = (bytes: Uint8Array, trackBox: ITrackBox): Uint8Array[] => {
@@ -74,7 +74,7 @@ module Mp4 {
     var finder = new Finder(tree);
     var offset = 8 * 6;
 
-    var ftypBytes = new Composer.Box.FileTypeBoxComposer({
+    var ftypBytes = new composer.FileTypeBoxComposer({
       majorBrand: 'mp4a',
       minorVersion: 0,
       compatibleBrands: ['mp42', 'isom', 'ndia']
@@ -115,19 +115,19 @@ module Mp4 {
       offset += chunks[i].length;
       chunkOffsets[i] = offset;
     }
-    stcoBytes = new Composer.Box.ChunkOffsetBoxComposer({
+    stcoBytes = new composer.ChunkOffsetBoxComposer({
       entryCount: stco.entryCount,
       chunkOffsets: chunkOffsets
     }).compose();
-    var mdatBytes = new Composer.Box.MediaDataBoxComposer({
+    var mdatBytes = new composer.MediaDataBoxComposer({
       data: concatBytes(chunks)
     }).compose();
     
-    var stblBytes = new Composer.Box.SampleTableBoxComposer([stsdBytes, sttsBytes, stszBytes, stcoBytes]).compose();
-    var minfBytes = new Composer.Box.MediaInformationBoxComposer([smhdBytes, dinfBytes, stblBytes]).compose();
-    var mdiaBytes = new Composer.Box.MediaBoxComposer([mdhdBytes, hdlrBytes, minfBytes]).compose();
-    var trakBytes = new Composer.Box.TrackBoxComposer([tkhdBytes, mdiaBytes]).compose();
-    var moovBytes = new Composer.Box.MovieBoxComposer([mvhdBytes, trakBytes]).compose();
+    var stblBytes = new composer.SampleTableBoxComposer([stsdBytes, sttsBytes, stszBytes, stcoBytes]).compose();
+    var minfBytes = new composer.MediaInformationBoxComposer([smhdBytes, dinfBytes, stblBytes]).compose();
+    var mdiaBytes = new composer.MediaBoxComposer([mdhdBytes, hdlrBytes, minfBytes]).compose();
+    var trakBytes = new composer.TrackBoxComposer([tkhdBytes, mdiaBytes]).compose();
+    var moovBytes = new composer.MovieBoxComposer([mvhdBytes, trakBytes]).compose();
 
     return concatBytes([ftypBytes, moovBytes, mdatBytes]);
   };
@@ -149,7 +149,7 @@ module Mp4 {
     aacHeader[2] = 0x40 | SAMPLERATE_TABLE.indexOf(mp4a.samplerate << 2) | (mp4a.channelcount >> 2);
     aacHeader[6] = 0xFC;
 
-    var i, j, k, idx, n, m, l, chunkOffset, sampleSize: number;
+    var i, j, k, idx, n, m, l, chunkOffset, sampleSize;
 
     for (i = 0, idx = 0, n = stsc.entryCount; i < n; ++i) {
       j = stsc.entries[i].firstChunk - 1;

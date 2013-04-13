@@ -1,4 +1,4 @@
-module Mp4.Composer {
+module mp4.composer {
   export class BaseComposer {
     view: DataView2;
     bitOffset = 0;

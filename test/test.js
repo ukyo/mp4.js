@@ -1,96 +1,152 @@
-// JavaScript source code
-
-function load(url) {
-    var d = $.Deferred();
-    var xhr = new XMLHttpRequest;
-    xhr.responseType = 'arraybuffer';
-    xhr.open('GET', url);
-    xhr.onloadend = function () {
-        d.resolve(new Uint8Array(xhr.response));
-    };
-    xhr.send();
-    return d.promise();
-}
-
-asyncTest('test parser', function () {
-    $.when(load('sample_iPod.m4v'), $.get('sample_iPod.xml'))
-    .then(function (m4v, xml) {
-        var tree = Mp4.parse(m4v);
-        var finder = new Mp4.Finder(tree);
-        $xml = $(xml);
-
+var m4v;
+var xml;
+describe('Parser', function () {
+    var tree = mp4.parse(m4v);
+    var finder = new mp4.Finder(tree);
+    var $xml = $(xml);
+    describe('FileTypeBox', function () {
         var $ftyp = $xml.find('FileTypeBox');
         var ftyp = finder.findOne('ftyp');
         var $info = $ftyp.find('BoxInfo');
-        equal(ftyp.byteLength, $info.attr('Size'), 'ftyp: size');
-        equal(ftyp.majorBrand, $ftyp.attr('MajorBrand'), 'ftyp: major brand');
-        $ftyp.find('BrandEntry').map(function (i) {
-            var brand = $(this).attr('AlternateBrand');
-            equal(ftyp.compatibleBrands[i], brand, 'ftyp: compatible brands ' + i);
+        it('size', function () {
+            return expect(ftyp.byteLength).toBe(+$info.attr('Size'));
         });
-
+        it('major brand', function () {
+            return expect(ftyp.majorBrand).toBe($ftyp.attr('MajorBrand'));
+        });
+        it('minor version', function () {
+            return expect(ftyp.minorVersion).toBe(+$ftyp.attr('MinorVersion'));
+        });
+        it('compatible brands', function () {
+            $ftyp.find('BrandEntry').map(function (i, el) {
+                expect(ftyp.compatibleBrands[i]).toBe($(el).attr('AlternateBrand'));
+            });
+        });
+    });
+    describe('MovieBox', function () {
         var $moov = $xml.find('MovieBox');
         var moov = finder.findOne('moov');
-        $info = $moov.find('BoxInfo');
-        equal(moov.byteLength, $info.attr('Size'), 'moov: size');
-        
+        var $info = $moov.find('BoxInfo');
+        it('size', function () {
+            return expect(moov.byteLength).toBe(+$info.attr('Size'));
+        });
+        describe('MovieHeaderBox', function () {
+            var $mvhd = $moov.find('MovieHeaderBox');
+            var mvhd = finder.findOne('mvhd');
+            var $info = $mvhd.find('BoxInfo');
+            var $fullinfo = $mvhd.find('FullBoxInfo');
+            it('size', function () {
+                return expect(mvhd.byteLength).toBe(+$info.attr('Size'));
+            });
+            it('version', function () {
+                return expect(mvhd.version).toBe(+$fullinfo.attr('Version'));
+            });
+            it('flags', function () {
+                return expect(mvhd.flags).toBe(+$fullinfo.attr('Flags'));
+            });
+            it('creation time', function () {
+                return expect(mvhd.creationTime).toBe(+$mvhd.attr('CreationTime'));
+            });
+            it('modification time', function () {
+                return expect(mvhd.modificationTime).toBe(+$mvhd.attr('ModificationTime'));
+            });
+            it('time scale', function () {
+                return expect(mvhd.timescale).toBe(+$mvhd.attr('TimeScale'));
+            });
+            it('duration', function () {
+                return expect(mvhd.duration).toBe(+$mvhd.attr('Duration'));
+            });
+            it('next track id', function () {
+                return expect(mvhd.nextTrackID).toBe(+$mvhd.attr('NextTrackID'));
+            });
+        });
+        describe('TrackBox 1', function () {
+            var $trak = $moov.find('TrackBox:nth(0)');
+            var trak = finder.findOne('trak');
+            var $info = $trak.find('BoxInfo');
+            it('size', function () {
+                return expect(trak.byteLength).toBe(+$info.attr('Size'));
+            });
+            var _finder = new mp4.Finder(trak);
+            describe('TrackHeaderBox', function () {
+                var finder = _finder;
+                var $tkhd = $trak.find('TrackHeaderBox');
+                var tkhd = finder.findOne('tkhd');
+                var $info = $tkhd.find('BoxInfo');
+                var $fullinfo = $tkhd.find('FullBoxInfo');
+                it('size', function () {
+                    return expect(tkhd.byteLength).toBe(+$info.attr('Size'));
+                });
+                it('version', function () {
+                    return expect(tkhd.version).toBe(+$fullinfo.attr('Version'));
+                });
+                it('flags', function () {
+                    return expect(tkhd.flags).toBe(+$fullinfo.attr('Flags'));
+                });
+                it('creation time', function () {
+                    return expect(tkhd.creationTime).toBe(+$tkhd.attr('CreationTime'));
+                });
+                it('modifiction time', function () {
+                    return expect(tkhd.modificationTime).toBe(+$tkhd.attr('ModificationTime'));
+                });
+                it('track id', function () {
+                    return expect(tkhd.trackID).toBe(+$tkhd.attr('TrackID'));
+                });
+                it('duration', function () {
+                    return expect(tkhd.duration).toBe(+$tkhd.attr('Duration'));
+                });
+                it('volume', function () {
+                    return expect(tkhd.volume).toBe(+$tkhd.attr('Volume'));
+                });
+            });
+            describe('MediaBox', function () {
+                var finder = _finder;
+                var $mdia = $trak.find('MediaBox');
+                var mdia = finder.findOne('mdia');
+                var $info = $mdia.find('BoxInfo');
+                it('size', function () {
+                    return expect(mdia.byteLength).toBe(+$info.attr('Size'));
+                });
+                describe('MediaHeaderBox', function () {
+                    var $mdhd = $mdia.find('MediaHeaderBox');
+                    var mdhd = finder.findOne('mdhd');
+                    var $info = $mdhd.find('BoxInfo');
+                    var $fullinfo = $mdhd.find('FullBoxInfo');
+                    it('size', function () {
+                        return expect(mdhd.byteLength).toBe(+$info.attr('Size'));
+                    });
+                    it('version', function () {
+                        return expect(mdhd.version).toBe(+$fullinfo.attr('Version'));
+                    });
+                    it('flags', function () {
+                        return expect(mdhd.flags).toBe(+$fullinfo.attr('Flags'));
+                    });
+                    it('creation time', function () {
+                        return expect(mdhd.creationTime).toBe(+$mdhd.attr('CreationTime'));
+                    });
+                    it('modification time', function () {
+                        return expect(mdhd.modificationTime).toBe(+$mdhd.attr('ModificationTime'));
+                    });
+                    it('timescale', function () {
+                        return expect(mdhd.timescale).toBe(+$mdhd.attr('TimeScale'));
+                    });
+                    it('duration', function () {
+                        return expect(mdhd.duration).toBe(+$mdhd.attr('Duration'));
+                    });
+                    it('language', function () {
+                        return expect(mdhd.language).toBe($mdhd.attr('LanguageCode'));
+                    });
+                });
+            });
+        });
+    });
+    describe('MediaDataBox', function () {
         var $mdat = $xml.find('MediaDataBox');
         var mdat = finder.findOne('mdat');
-        $info = $mdat.find('BoxInfo');
-        equal(mdat.byteLength, $info.attr('Size'), 'mdat: size');
-
-        finder = new Mp4.Finder(moov);
-        var $mvhd = $moov.find('MovieHeaderBox');
-        var mvhd = finder.findOne('mvhd');
-        $info = $mvhd.find('BoxInfo');
-        var $fullinfo = $mvhd.find('FullBoxInfo');
-        equal(mvhd.byteLength, $info.attr('Size'), 'mvhd: size');
-        equal(mvhd.version, $fullinfo.attr('Version'), 'mvhd: version');
-        equal(mvhd.flags, $fullinfo.attr('Flags'), 'mvhd: flags');
-        equal(mvhd.creationTime, $mvhd.attr('CreationTime'), 'mvhd: creation time');
-        equal(mvhd.modificationTime, $mvhd.attr('ModificationTime'), 'mvhd: modification time');
-        equal(mvhd.timescale, $mvhd.attr('TimeScale'), 'mvhd: time scale');
-        equal(mvhd.duration, $mvhd.attr('Duration'), 'mvhd: duration');
-        equal(mvhd.nextTrackID, $mvhd.attr('NextTrackID'), 'mvhd: next track id');
-
-        var $trak1 = $moov.find('TrackBox:nth(0)');
-        var trak = finder.findAll('trak')[0];
-        $info = $trak1.find('BoxInfo');
-        equal(trak.byteLength, $info.attr('Size'), 'trak1: size');
-
-        finder = new Mp4.Finder(trak);
-        var $tkhd = $trak1.find('TrackHeaderBox');
-        var tkhd = finder.findOne('tkhd');
-        $info = $tkhd.find('BoxInfo');
-        $fullinfo = $tkhd.find('FullBoxInfo');
-        equal(tkhd.byteLength, $info.attr('Size'), 'tkhd: size');
-        equal(tkhd.version, $fullinfo.attr('Version'), 'tkhd: version');
-        equal(tkhd.flags, $fullinfo.attr('Flags'), 'tkhd: flags');
-        equal(tkhd.creationTime, $tkhd.attr('CreationTime'), 'tkhd: creation time');
-        equal(tkhd.modificationTime, $tkhd.attr('ModificationTime'), 'tkhd: modification time');
-        equal(tkhd.trackID, $tkhd.attr('TrackID'), 'tkhd: track id');
-        equal(tkhd.duration, $tkhd.attr('Duration'), 'tkhd: duration');
-        equal(tkhd.volume, +$tkhd.attr('Volume'), 'tkhd: volume');
-
-        var $mdia = $trak1.find('MediaBox');
-        var mdia = finder.findOne('mdia');
-        $info = $mdia.find('BoxInfo');
-        equal(mdia.byteLength, $info.attr('Size'), 'mdia: size');
-        
-        finder = new Mp4.Finder(mdia);
-        var $mdhd = $mdia.find('MediaHeaderBox');
-        var mdhd = finder.findOne('mdhd');
-        $info = $mdhd.find('BoxInfo');
-        $fullinfo = $mdhd.find('FullBoxInfo');
-        equal(mdhd.byteLength, $info.attr('Size'), 'mdhd: size');
-        equal(mdhd.version, $fullinfo.attr('Version'), 'mdhd: version');
-        equal(mdhd.flags, $fullinfo.attr('Flags'), 'mdhd: flags');
-        equal(mdhd.creationTime, $mdhd.attr('CreationTime'), 'mdhd: creation time');
-        equal(mdhd.modificationTime, $mdhd.attr('ModificationTime'), 'mdhd: modification time');
-        equal(mdhd.timescale, $mdhd.attr('TimeScale'), 'mdhd: time scale');
-        equal(mdhd.duration, $mdhd.attr('Duration'), 'mdhd: duration');
-        equal(mdhd.language, $mdhd.attr('LanguageCode'), 'mdhd; language code');
-
-        start();
+        var $info = $mdat.find('BoxInfo');
+        it('size', function () {
+            return expect(mdat.byteLength).toBe(+$info.attr('Size'));
+        });
     });
 });
+//@ sourceMappingURL=test.js.map

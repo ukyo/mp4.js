@@ -652,6 +652,86 @@ module mp4.parser {
   }
 
 
+  export class CopyrightBoxParser extends FullBoxParser {
+    static type = 'cprt';
+
+    parse(): ICopyrightBox {
+      var ret = <ICopyrightBox>super.parse();
+      this.skipBits(1);
+      ret.language = String.fromCharCode(this.readBits(5), this.readBits(5), this.readBits(5));
+      ret.notice = this.readUTF8StringNullTerminated();
+      return ret;
+    }
+  }
+
+
+  export class MovieExtendsBoxParser extends BoxListParser {
+    static type = 'mvex';
+  }
+
+
+  export class MovieExtendsHeaderBoxParser extends FullBoxParser {
+    static type = 'mehd';
+
+    parse(): IMovieExtendsHeaderBox {
+      var ret = <IMovieExtendsHeaderBox>super.parse();
+      ret.fragmentDuration = this.readUint32();
+      return ret;
+    }
+  }
+
+
+  export class TrackExtendsBoxParser extends FullBoxParser {
+    static type = 'trex';
+
+    parse(): ITrackExtendsBox {
+      var ret = <ITrackExtendsBox>super.parse();
+      ret.trackID = this.readUint32();
+      ret.defaultSampleDescriptionIndex = this.readUint32();
+      ret.defaultSampleDuration = this.readUint32();
+      ret.defaultSampleSize = this.readUint32();
+      ret.defaultSampleFlags = this.readUint32();
+      return ret;
+    }
+  }
+
+
+  export class MovieFlagmentBoxParser extends BoxListParser {
+    static type = 'moof';
+  }
+
+
+  export class MovieFragmentHeaderBoxParser extends FullBoxParser {
+    static type = 'mfhd';
+
+    parse(): IMovieFragmentHeaderBox {
+      var ret = <IMovieFragmentHeaderBox>super.parse();
+      ret.sequenceNumber = this.readUint32();
+      return ret;
+    }
+  }
+
+
+  export class TrackFragmentBoxParser extends BoxListParser {
+    static type = 'traf';
+  }
+
+
+  export class TrackFragmentHeaderBoxParser extends FullBoxParser {
+    static type = 'tfhd';
+
+    parse(): ITrackFragmentHeaderBox {
+      var ret = <ITrackFragmentHeaderBox>super.parse();
+      ret.trackID = this.readUint32();
+      if (ret.flags & 0x000001) ret.baseDataOffset = this.readBytes(8);
+      if (ret.flags & 0x000002) ret.sampleDescriptionIndex = this.readUint32();
+      if (ret.flags & 0x000008) ret.defaultSampleDuration = this.readUint32();
+      if (ret.flags & 0x000010) ret.defaultSampleSize = this.readUint32();
+      if (ret.flags & 0x000020) ret.defaultSampleFlags = this.readUint32();
+      return ret;
+    }
+  }
+
   /**
    * Create a box parser by the box type.
    * @param bytes

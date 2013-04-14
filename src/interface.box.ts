@@ -232,7 +232,6 @@ module mp4 {
       sagmentDuration: number; // unsigned int(32)
       mediaTime: number; // unsigned int(32)
       mediaRateInteger: number; // unsigned int(16)
-      mediaRateFraction: number; // unsigned int(16)
     }[];
   }
 

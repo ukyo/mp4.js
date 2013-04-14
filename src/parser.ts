@@ -136,7 +136,6 @@ module mp4.parser {
       return ret;
     }
 
-
     readStringNullTerminated(): string {
       var bytes = this.bytes.subarray(this.byteOffset);
       var i = 0;
@@ -167,7 +166,7 @@ module mp4.parser {
       return this.bitOffset >>> 3;
     }
 
-    isEnd(): bool {
+    eof(): bool {
       return this.bitOffset / 8 >= this.bytes.length;
     }
 

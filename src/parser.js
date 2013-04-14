@@ -178,7 +178,7 @@ var mp4;
                 enumerable: true,
                 configurable: true
             });
-            BaseParser.prototype.isEnd = function () {
+            BaseParser.prototype.eof = function () {
                 return this.bitOffset / 8 >= this.bytes.length;
             };
             return BaseParser;

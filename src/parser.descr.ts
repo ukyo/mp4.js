@@ -75,7 +75,7 @@ module mp4.parser {
       var descr: IDescriptor;
       ret.profileLevelIndicationIndexDescrs = [];
 
-      while (!this.isEnd()) {
+      while (!this.eof()) {
         info = getDescrInfo(this.bytes.subarray(this.byteOffset));
         descrParser = createDescriptorParser(this.readBytes(info.byteLength), info.tag);
         descr = descrParser.parse();
@@ -182,7 +182,7 @@ module mp4.parser {
       ret.langDescrs = [];
       ret.extDescrs = [];
 
-      while (!this.isEnd()) {
+      while (!this.eof()) {
         info = getDescrInfo(this.bytes.subarray(this.byteOffset));
         descrParser = createDescriptorParser(this.readBytes(info.byteLength), info.tag);
         descr = descrParser.parse();

@@ -60,7 +60,7 @@ describe('Parser', function () {
                 return expect(mvhd.nextTrackID).toBe(+$mvhd.attr('NextTrackID'));
             });
         });
-        describe('TrackBox 1', function () {
+        describe('TrackBox 1(Audio Track)', function () {
             var $trak = $moov.find('TrackBox:nth(0)');
             var trak = finder.findOne('trak');
             var $info = $trak.find('BoxInfo');
@@ -349,9 +349,9 @@ describe('Parser', function () {
                 });
             });
         });
-        describe('TrackBox 2', function () {
-            var $trak = $moov.find('TrackBox:nth(0)');
-            var trak = finder.findOne('trak');
+        describe('TrackBox 2(Video Track)', function () {
+            var $trak = $moov.find('TrackBox:nth(1)');
+            var trak = finder.findAll('trak')[1];
             var $info = $trak.find('BoxInfo');
             it('size', function () {
                 return expect(trak.byteLength).toBe(+$info.attr('Size'));
@@ -384,8 +384,54 @@ describe('Parser', function () {
                 it('duration', function () {
                     return expect(tkhd.duration).toBe(+$tkhd.attr('Duration'));
                 });
-                it('volume', function () {
-                    return expect(tkhd.volume).toBe(+$tkhd.attr('Volume'));
+                it('width', function () {
+                    return expect(tkhd.width).toBe(+$tkhd.attr('Width'));
+                });
+                it('height', function () {
+                    return expect(tkhd.height).toBe(+$tkhd.attr('Height'));
+                });
+                it('matrix', function () {
+                    var $matrix = $tkhd.find('Matrix');
+                    expect(tkhd.matrix[0]).toBe(+$matrix.attr('m11'));
+                    expect(tkhd.matrix[1]).toBe(+$matrix.attr('m12'));
+                    expect(tkhd.matrix[2]).toBe(+$matrix.attr('m13'));
+                    expect(tkhd.matrix[3]).toBe(+$matrix.attr('m21'));
+                    expect(tkhd.matrix[4]).toBe(+$matrix.attr('m22'));
+                    expect(tkhd.matrix[5]).toBe(+$matrix.attr('m23'));
+                    expect(tkhd.matrix[6]).toBe(+$matrix.attr('m31'));
+                    expect(tkhd.matrix[7]).toBe(+$matrix.attr('m32'));
+                    expect(tkhd.matrix[8]).toBe(+$matrix.attr('m33'));
+                });
+            });
+            describe('EditBox', function () {
+                var $edts = $trak.find('EditBox');
+                var edts = finder.findOne('edts');
+                var $info = $edts.find('BoxInfo');
+                it('size', function () {
+                    return expect(edts.byteLength).toBe(+$info.attr('Size'));
+                });
+                describe('EditListBox', function () {
+                    var $elst = $edts.find('EditListBox');
+                    var elst = finder.findOne('elst');
+                    var $info = $elst.find('BoxInfo');
+                    var $fullinfo = $elst.find('FullBoxInfo');
+                    it('size', function () {
+                        return expect(elst.byteLength).toBe(+$info.attr('Size'));
+                    });
+                    it('version', function () {
+                        return expect(elst.version).toBe(+$fullinfo.attr('Version'));
+                    });
+                    it('flags', function () {
+                        return expect(elst.flags).toBe(+$fullinfo.attr('Flags'));
+                    });
+                    it('entries', function () {
+                        $elst.find('EditListEntry').map(function (i, el) {
+                            var $el = $(el);
+                            expect(elst.entries[i].sagmentDuration).toBe(+$el.attr('Duration'));
+                            expect(elst.entries[i].mediaTime).toBe(+$el.attr('MediaTime'));
+                            expect(elst.entries[i].mediaRateInteger).toBe(+$el.attr('MediaRate'));
+                        });
+                    });
                 });
             });
             describe('MediaBox', function () {
@@ -599,6 +645,26 @@ describe('Parser', function () {
                                 });
                             });
                         });
+                        describe('SyncSampleBox', function () {
+                            var $stss = $stbl.find('SyncSampleBox');
+                            var stss = finder.findOne('stss');
+                            var $info = $stss.find('BoxInfo');
+                            var $fullinfo = $stss.find('FullBoxInfo');
+                            it('size', function () {
+                                return expect(stss.byteLength).toBe(+$info.attr('Size'));
+                            });
+                            it('version', function () {
+                                return expect(stss.version).toBe(+$fullinfo.attr('Version'));
+                            });
+                            it('flags', function () {
+                                return expect(stss.flags).toBe(+$fullinfo.attr('Flags'));
+                            });
+                            it('sample numbers', function () {
+                                $stss.find('SyncSampleEntry').map(function (i, el) {
+                                    expect(stss.sampleNumbers[i]).toBe(+$(el).attr('sampleNumber'));
+                                });
+                            });
+                        });
                     });
                 });
             });
@@ -612,5 +678,7 @@ describe('Parser', function () {
             return expect(mdat.byteLength).toBe(+$info.attr('Size'));
         });
     });
+});
+describe('Composer', function () {
 });
 //@ sourceMappingURL=test.js.map

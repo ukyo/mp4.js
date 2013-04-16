@@ -7,14 +7,14 @@ var m4v: Uint8Array;
 var xml: string;
 
 describe('Parser', () => {
-  var tree = mp4.parse(m4v);
-  var finder = new mp4.Finder(tree);
+  var tree = Mp4.parse(m4v);
+  var finder = new Mp4.Finder(tree);
   var $xml = $(xml);
 
 
   describe('FileTypeBox', () => {
     var $ftyp = $xml.find('FileTypeBox');
-    var ftyp = <mp4.IFileTypeBox>finder.findOne('ftyp');
+    var ftyp = <Mp4.IFileTypeBox>finder.findOne('ftyp');
     var $info = $ftyp.find('BoxInfo');
 
     it('size', () => expect(ftyp.byteLength).toBe(+$info.attr('Size')));
@@ -30,14 +30,14 @@ describe('Parser', () => {
 
   describe('MovieBox', () => {
     var $moov = $xml.find('MovieBox');
-    var moov = <mp4.IMovieBox>finder.findOne('moov');
+    var moov = <Mp4.IMovieBox>finder.findOne('moov');
     var $info = $moov.find('BoxInfo');
 
     it('size', () => expect(moov.byteLength).toBe(+$info.attr('Size')));
 
     describe('MovieHeaderBox', () => {
       var $mvhd = $moov.find('MovieHeaderBox');
-      var mvhd = <mp4.IMovieHeaderBox>finder.findOne('mvhd');
+      var mvhd = <Mp4.IMovieHeaderBox>finder.findOne('mvhd');
       var $info = $mvhd.find('BoxInfo');
       var $fullinfo = $mvhd.find('FullBoxInfo');
 
@@ -53,17 +53,17 @@ describe('Parser', () => {
 
     describe('TrackBox 1(Audio Track)', () => {
       var $trak = $moov.find('TrackBox:nth(0)');
-      var trak = <mp4.ITrackBox>finder.findOne('trak');
+      var trak = <Mp4.ITrackBox>finder.findOne('trak');
       var $info = $trak.find('BoxInfo');
 
       it('size', () => expect(trak.byteLength).toBe(+$info.attr('Size')));
 
-      var _finder = new mp4.Finder(trak);
+      var _finder = new Mp4.Finder(trak);
 
       describe('TrackHeaderBox', () => {
         var finder = _finder;
         var $tkhd = $trak.find('TrackHeaderBox');
-        var tkhd = <mp4.ITrackHeaderBox>finder.findOne('tkhd');
+        var tkhd = <Mp4.ITrackHeaderBox>finder.findOne('tkhd');
         var $info = $tkhd.find('BoxInfo');
         var $fullinfo = $tkhd.find('FullBoxInfo');
 
@@ -80,14 +80,14 @@ describe('Parser', () => {
       describe('MediaBox', () => {
         var finder = _finder;
         var $mdia = $trak.find('MediaBox');
-        var mdia = <mp4.IMediaBox>finder.findOne('mdia');
+        var mdia = <Mp4.IMediaBox>finder.findOne('mdia');
         var $info = $mdia.find('BoxInfo');
 
         it('size', () => expect(mdia.byteLength).toBe(+$info.attr('Size')));
 
         describe('MediaHeaderBox', () => {
           var $mdhd = $mdia.find('MediaHeaderBox');
-          var mdhd = <mp4.IMediaHeaderBox>finder.findOne('mdhd');
+          var mdhd = <Mp4.IMediaHeaderBox>finder.findOne('mdhd');
           var $info = $mdhd.find('BoxInfo');
           var $fullinfo = $mdhd.find('FullBoxInfo');
 
@@ -103,7 +103,7 @@ describe('Parser', () => {
 
         describe('HandlerBox', () => {
           var $hdlr = $mdia.find('HandlerBox');
-          var hdlr = <mp4.IHandlerBox>finder.findOne('hdlr');
+          var hdlr = <Mp4.IHandlerBox>finder.findOne('hdlr');
           var $info = $hdlr.find('BoxInfo');
           var $fullinfo = $hdlr.find('FullBoxInfo');
 
@@ -117,14 +117,14 @@ describe('Parser', () => {
 
         describe('MediaInformationBox', () => {
           var $minf = $mdia.find('MediaInformationBox');
-          var minf = <mp4.IMediaInformationBox>finder.findOne('minf');
+          var minf = <Mp4.IMediaInformationBox>finder.findOne('minf');
           var $info = $minf.find('BoxInfo');
 
           it('size', () => expect(minf.byteLength).toBe(+$info.attr('Size')));
 
           describe('SoundMediaHeaderBox', () => {
             var $smhd = $minf.find('SoundMediaHeaderBox');
-            var smhd = <mp4.ISoundMediaHeaderBox>finder.findOne('smhd');
+            var smhd = <Mp4.ISoundMediaHeaderBox>finder.findOne('smhd');
             var $info = $smhd.find('BoxInfo');
             var $fullinfo = $smhd.find('FullBoxInfo');
 
@@ -135,14 +135,14 @@ describe('Parser', () => {
 
           describe('DataInformationBox', () => {
             var $dinf = $minf.find('DataInformationBox');
-            var dinf = <mp4.IDataInformationBox>finder.findOne('dinf');
+            var dinf = <Mp4.IDataInformationBox>finder.findOne('dinf');
             var $info = $dinf.find('BoxInfo');
 
             it('size', () => expect(dinf.byteLength).toBe(+$info.attr('Size')));
             
             describe('DataReferenceBox', () => {
               var $dref = $dinf.find('DataReferenceBox');
-              var dref = <mp4.IDataReferenceBox>finder.findOne('dref');
+              var dref = <Mp4.IDataReferenceBox>finder.findOne('dref');
               var $info = $dref.find('BoxInfo');
               var $fullinfo = $dref.find('FullBoxInfo');
 
@@ -152,7 +152,7 @@ describe('Parser', () => {
 
               describe('URLDataEntryBox', () => {
                 var $url = $dref.find('URLDataEntryBox');
-                var url = <mp4.IDataEntryUrlBox>finder.findOne('url ');
+                var url = <Mp4.IDataEntryUrlBox>finder.findOne('url ');
                 var $info = $url.find('BoxInfo');
                 var $fullinfo = $url.find('FullBoxInfo');
 
@@ -165,14 +165,14 @@ describe('Parser', () => {
 
           describe('SampleTableBox', () => {
             var $stbl = $mdia.find('SampleTableBox');
-            var stbl = <mp4.ISampleTableBox>finder.findOne('stbl');
+            var stbl = <Mp4.ISampleTableBox>finder.findOne('stbl');
             var $info = $stbl.find('BoxInfo');
 
             it('size', () => expect(stbl.byteLength).toBe(+$info.attr('Size')));
 
             describe('SampleDescriptionBox', () => {
               var $stsd = $stbl.find('SampleDescriptionBox');
-              var stsd = <mp4.ISampleDescriptionBox>finder.findOne('stsd');
+              var stsd = <Mp4.ISampleDescriptionBox>finder.findOne('stsd');
               var $info = $stsd.find('BoxInfo');
               var $fullinfo = $stsd.find('FullBoxInfo');
 
@@ -182,7 +182,7 @@ describe('Parser', () => {
 
               describe('MP4AudioSampleEntry', () => {
                 var $mp4a = $stsd.find('MPEGAudioSampleDescriptionBox');
-                var mp4a = <mp4.IMP4AudioSampleEntry>finder.findOne('mp4a');
+                var mp4a = <Mp4.IMP4AudioSampleEntry>finder.findOne('mp4a');
                 var $info = $mp4a.find('BoxInfo');
 
                 it('size', () => expect(mp4a.byteLength).toBe(+$info.attr('Size')));
@@ -196,7 +196,7 @@ describe('Parser', () => {
 
             describe('TimeToSampleBox', () => {
               var $stts = $stbl.find('TimeToSampleBox');
-              var stts = <mp4.ITimeToSampleBox>finder.findOne('stts');
+              var stts = <Mp4.ITimeToSampleBox>finder.findOne('stts');
               var $info = $stts.find('BoxInfo');
               var $fullinfo = $stts.find('FullBoxInfo');
 
@@ -214,7 +214,7 @@ describe('Parser', () => {
 
             describe('SampleToChunkBox', () => {
               var $stsc = $stbl.find('SampleToChunkBox');
-              var stsc = <mp4.ISampleToChunkBox>finder.findOne('stsc');
+              var stsc = <Mp4.ISampleToChunkBox>finder.findOne('stsc');
               var $info = $stsc.find('BoxInfo');
               var $fullinfo = $stsc.find('FullBoxInfo');
 
@@ -233,7 +233,7 @@ describe('Parser', () => {
 
             describe('SampleSizeBox', () => {
               var $stsz = $stbl.find('SampleSizeBox');
-              var stsz = <mp4.ISampleSizeBox>finder.findOne('stsz');
+              var stsz = <Mp4.ISampleSizeBox>finder.findOne('stsz');
               var $info = $stsz.find('BoxInfo');
               var $fullinfo = $stsz.find('FullBoxInfo');
 
@@ -249,7 +249,7 @@ describe('Parser', () => {
 
             describe('ChunkOffsetBox', () => {
               var $stco = $stbl.find('ChunkOffsetBox');
-              var stco = <mp4.IChunkOffsetBox>finder.findOne('stco');
+              var stco = <Mp4.IChunkOffsetBox>finder.findOne('stco');
               var $info = $stco.find('BoxInfo');
               var $fullinfo = $stco.find('FullBoxInfo');
 
@@ -270,17 +270,17 @@ describe('Parser', () => {
 
     describe('TrackBox 2(Video Track)', () => {
       var $trak = $moov.find('TrackBox:nth(1)');
-      var trak = <mp4.ITrackBox>finder.findAll('trak')[1];
+      var trak = <Mp4.ITrackBox>finder.findAll('trak')[1];
       var $info = $trak.find('BoxInfo');
 
       it('size', () => expect(trak.byteLength).toBe(+$info.attr('Size')));
 
-      var _finder = new mp4.Finder(trak);
+      var _finder = new Mp4.Finder(trak);
 
       describe('TrackHeaderBox', () => {
         var finder = _finder;
         var $tkhd = $trak.find('TrackHeaderBox');
-        var tkhd = <mp4.ITrackHeaderBox>finder.findOne('tkhd');
+        var tkhd = <Mp4.ITrackHeaderBox>finder.findOne('tkhd');
         var $info = $tkhd.find('BoxInfo');
         var $fullinfo = $tkhd.find('FullBoxInfo');
 
@@ -309,14 +309,14 @@ describe('Parser', () => {
 
       describe('EditBox', () => {
         var $edts = $trak.find('EditBox');
-        var edts = <mp4.IEditBox>finder.findOne('edts');
+        var edts = <Mp4.IEditBox>finder.findOne('edts');
         var $info = $edts.find('BoxInfo');
 
         it('size', () => expect(edts.byteLength).toBe(+$info.attr('Size')));
 
         describe('EditListBox', () => {
           var $elst = $edts.find('EditListBox');
-          var elst = <mp4.IEditListBox>finder.findOne('elst');
+          var elst = <Mp4.IEditListBox>finder.findOne('elst');
           var $info = $elst.find('BoxInfo');
           var $fullinfo = $elst.find('FullBoxInfo');
 
@@ -337,14 +337,14 @@ describe('Parser', () => {
       describe('MediaBox', () => {
         var finder = _finder;
         var $mdia = $trak.find('MediaBox');
-        var mdia = <mp4.IMediaBox>finder.findOne('mdia');
+        var mdia = <Mp4.IMediaBox>finder.findOne('mdia');
         var $info = $mdia.find('BoxInfo');
 
         it('size', () => expect(mdia.byteLength).toBe(+$info.attr('Size')));
 
         describe('MediaHeaderBox', () => {
           var $mdhd = $mdia.find('MediaHeaderBox');
-          var mdhd = <mp4.IMediaHeaderBox>finder.findOne('mdhd');
+          var mdhd = <Mp4.IMediaHeaderBox>finder.findOne('mdhd');
           var $info = $mdhd.find('BoxInfo');
           var $fullinfo = $mdhd.find('FullBoxInfo');
 
@@ -360,7 +360,7 @@ describe('Parser', () => {
 
         describe('HandlerBox', () => {
           var $hdlr = $mdia.find('HandlerBox');
-          var hdlr = <mp4.IHandlerBox>finder.findOne('hdlr');
+          var hdlr = <Mp4.IHandlerBox>finder.findOne('hdlr');
           var $info = $hdlr.find('BoxInfo');
           var $fullinfo = $hdlr.find('FullBoxInfo');
 
@@ -374,7 +374,7 @@ describe('Parser', () => {
 
         describe('MediaInformationBox', () => {
           var $minf = $mdia.find('MediaInformationBox');
-          var minf = <mp4.IMediaInformationBox>finder.findOne('minf');
+          var minf = <Mp4.IMediaInformationBox>finder.findOne('minf');
           var $info = $minf.find('BoxInfo');
 
           it('size', () => expect(minf.byteLength).toBe(+$info.attr('Size')));
@@ -394,14 +394,14 @@ describe('Parser', () => {
 
           describe('DataInformationBox', () => {
             var $dinf = $minf.find('DataInformationBox');
-            var dinf = <mp4.IDataInformationBox>finder.findOne('dinf');
+            var dinf = <Mp4.IDataInformationBox>finder.findOne('dinf');
             var $info = $dinf.find('BoxInfo');
 
             it('size', () => expect(dinf.byteLength).toBe(+$info.attr('Size')));
 
             describe('DataReferenceBox', () => {
               var $dref = $dinf.find('DataReferenceBox');
-              var dref = <mp4.IDataReferenceBox>finder.findOne('dref');
+              var dref = <Mp4.IDataReferenceBox>finder.findOne('dref');
               var $info = $dref.find('BoxInfo');
               var $fullinfo = $dref.find('FullBoxInfo');
 
@@ -411,7 +411,7 @@ describe('Parser', () => {
 
               describe('URLDataEntryBox', () => {
                 var $url = $dref.find('URLDataEntryBox');
-                var url = <mp4.IDataEntryUrlBox>finder.findOne('url ');
+                var url = <Mp4.IDataEntryUrlBox>finder.findOne('url ');
                 var $info = $url.find('BoxInfo');
                 var $fullinfo = $url.find('FullBoxInfo');
 
@@ -424,14 +424,14 @@ describe('Parser', () => {
 
           describe('SampleTableBox', () => {
             var $stbl = $mdia.find('SampleTableBox');
-            var stbl = <mp4.ISampleTableBox>finder.findOne('stbl');
+            var stbl = <Mp4.ISampleTableBox>finder.findOne('stbl');
             var $info = $stbl.find('BoxInfo');
 
             it('size', () => expect(stbl.byteLength).toBe(+$info.attr('Size')));
 
             describe('SampleDescriptionBox', () => {
               var $stsd = $stbl.find('SampleDescriptionBox');
-              var stsd = <mp4.ISampleDescriptionBox>finder.findOne('stsd');
+              var stsd = <Mp4.ISampleDescriptionBox>finder.findOne('stsd');
               var $info = $stsd.find('BoxInfo');
               var $fullinfo = $stsd.find('FullBoxInfo');
 
@@ -456,7 +456,7 @@ describe('Parser', () => {
 
             describe('TimeToSampleBox', () => {
               var $stts = $stbl.find('TimeToSampleBox');
-              var stts = <mp4.ITimeToSampleBox>finder.findOne('stts');
+              var stts = <Mp4.ITimeToSampleBox>finder.findOne('stts');
               var $info = $stts.find('BoxInfo');
               var $fullinfo = $stts.find('FullBoxInfo');
 
@@ -474,7 +474,7 @@ describe('Parser', () => {
 
             describe('SampleToChunkBox', () => {
               var $stsc = $stbl.find('SampleToChunkBox');
-              var stsc = <mp4.ISampleToChunkBox>finder.findOne('stsc');
+              var stsc = <Mp4.ISampleToChunkBox>finder.findOne('stsc');
               var $info = $stsc.find('BoxInfo');
               var $fullinfo = $stsc.find('FullBoxInfo');
 
@@ -493,7 +493,7 @@ describe('Parser', () => {
 
             describe('SampleSizeBox', () => {
               var $stsz = $stbl.find('SampleSizeBox');
-              var stsz = <mp4.ISampleSizeBox>finder.findOne('stsz');
+              var stsz = <Mp4.ISampleSizeBox>finder.findOne('stsz');
               var $info = $stsz.find('BoxInfo');
               var $fullinfo = $stsz.find('FullBoxInfo');
 
@@ -509,7 +509,7 @@ describe('Parser', () => {
 
             describe('ChunkOffsetBox', () => {
               var $stco = $stbl.find('ChunkOffsetBox');
-              var stco = <mp4.IChunkOffsetBox>finder.findOne('stco');
+              var stco = <Mp4.IChunkOffsetBox>finder.findOne('stco');
               var $info = $stco.find('BoxInfo');
               var $fullinfo = $stco.find('FullBoxInfo');
 
@@ -525,7 +525,7 @@ describe('Parser', () => {
 
             describe('SyncSampleBox', () => {
               var $stss = $stbl.find('SyncSampleBox');
-              var stss = <mp4.ISyncSampleBox>finder.findOne('stss');
+              var stss = <Mp4.ISyncSampleBox>finder.findOne('stss');
               var $info = $stss.find('BoxInfo');
               var $fullinfo = $stss.find('FullBoxInfo');
 
@@ -547,7 +547,7 @@ describe('Parser', () => {
 
   describe('MediaDataBox', () => {
     var $mdat = $xml.find('MediaDataBox');
-    var mdat = <mp4.IMediaDataBox>finder.findOne('mdat');
+    var mdat = <Mp4.IMediaDataBox>finder.findOne('mdat');
     var $info = $mdat.find('BoxInfo');
 
     it('size', () => expect(mdat.byteLength).toBe(+$info.attr('Size')));

@@ -1,4 +1,4 @@
-module mp4.parser {
+module Mp4.Parser {
 
   var BIT_MASKS: number[] = [
     0x00000000,

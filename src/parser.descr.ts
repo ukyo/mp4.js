@@ -1,4 +1,4 @@
-module mp4.parser {
+module Mp4.Parser {
 
   export var getDescrInfo = (bytes: Uint8Array, offset: number = 0): IDescriptor => {
     var tag = bytes[offset++];
@@ -212,13 +212,13 @@ module mp4.parser {
 
   export var createDescriptorParser = (() => {
     var Parsers = {};
-    Object.keys(parser).forEach((key) => {
-      var Parser = parser[key];
-      if (Parser.tag != null) {
-        if (Array.isArray(Parser.tag)) {
-          Parser.tag.forEach(tag => Parsers[tag] = Parser);
+    Object.keys(Parser).forEach((key) => {
+      var _Parser = Parser[key];
+      if (_Parser.tag != null) {
+        if (Array.isArray(_Parser.tag)) {
+          _Parser.tag.forEach(tag => Parsers[tag] = _Parser);
         } else {
-          Parsers[Parser.tag] = Parser;
+          Parsers[_Parser.tag] = _Parser;
         }
       }
     });

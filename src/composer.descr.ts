@@ -1,3 +1,3 @@
-module mp4.composer {
+module Mp4.Composer {
 
 }

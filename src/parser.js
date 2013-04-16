@@ -1,6 +1,6 @@
-var mp4;
-(function (mp4) {
-    (function (parser) {
+var Mp4;
+(function (Mp4) {
+    (function (Parser) {
         var BIT_MASKS = [
             0x00000000, 
             0x00000001, 
@@ -34,7 +34,7 @@ var mp4;
             function BaseParser(bytes) {
                 this.bytes = bytes;
                 this.bitOffset = 0;
-                this.view = new mp4.DataView2(bytes);
+                this.view = new Mp4.DataView2(bytes);
             }
             BaseParser.prototype.parse = function () {
                 throw new Error('not implemented error.');
@@ -163,7 +163,7 @@ var mp4;
                     ;
                 }
                 this.skipBytes(i);
-                return mp4.DataView2.UTF8BytesToString(bytes.subarray(0, i - 1));
+                return Mp4.DataView2.UTF8BytesToString(bytes.subarray(0, i - 1));
             };
             BaseParser.prototype.skipBits = function (n) {
                 this.bitOffset += n;
@@ -183,8 +183,8 @@ var mp4;
             };
             return BaseParser;
         })();
-        parser.BaseParser = BaseParser;        
-    })(mp4.parser || (mp4.parser = {}));
-    var parser = mp4.parser;
-})(mp4 || (mp4 = {}));
+        Parser.BaseParser = BaseParser;        
+    })(Mp4.Parser || (Mp4.Parser = {}));
+    var Parser = Mp4.Parser;
+})(Mp4 || (Mp4 = {}));
 //@ sourceMappingURL=parser.js.map

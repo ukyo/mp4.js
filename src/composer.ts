@@ -1,4 +1,4 @@
-module mp4.composer {
+module Mp4.Composer {
   export class BaseComposer {
     view: DataView2;
     bitOffset = 0;
@@ -140,7 +140,7 @@ module mp4.composer {
     private expandBuffer(expandWidth: number) {
       var bitLength = this.bytes.length * 8;
       var originalBitLength = bitLength;
-      while (bitLength < originalBitLength + expandWidth) bitLength *= 2;
+      while (bitLength < this.bitOffset + expandWidth) bitLength *= 2;
       var bytes = new Uint8Array(Math.ceil(bitLength / 8));
       bytes.set(this.bytes);
       this.bytes = bytes;

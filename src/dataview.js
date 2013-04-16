@@ -1,5 +1,5 @@
-var mp4;
-(function (mp4) {
+var Mp4;
+(function (Mp4) {
     var toString = Object.prototype.toString;
     var BUFF8 = new Uint8Array(0x8000);
     var BUFF16 = new Uint16Array(BUFF8.buffer);
@@ -224,6 +224,6 @@ var mp4;
         };
         return DataView2;
     })();
-    mp4.DataView2 = DataView2;    
-})(mp4 || (mp4 = {}));
+    Mp4.DataView2 = DataView2;    
+})(Mp4 || (Mp4 = {}));
 //@ sourceMappingURL=dataview.js.map

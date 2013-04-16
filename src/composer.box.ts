@@ -1,4 +1,4 @@
-module mp4.composer {
+module Mp4.Composer {
 
   export interface IBox {}
 
@@ -407,16 +407,16 @@ module mp4.composer {
     constructor(box: IChunkOffsetBox) {
       super(box);
       this.writeUint32(box.entryCount);
-      box.chunkOffsets.forEach(offset => this.writeUint32(offset));
+      box.chunkOffsets.forEach((offset, i) => this.writeUint32(offset));
     }
   }
 
 
   var createBoxComposer = (() => {
     var Composers = {};
-    Object.keys(composer).forEach(key => {
-      var Composer = composer[key];
-      if (Composer.type) Composers[Composer.type] = Composer;
+    Object.keys(Composer).forEach(key => {
+      var _Composer = Composer[key];
+      if (_Composer.type) Composers[_Composer.type] = _Composer;
     });
     return (box: IBox): BoxComposer => new Composers[box.type](box);
   })();

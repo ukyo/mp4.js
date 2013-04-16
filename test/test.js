@@ -1,8 +1,8 @@
 var m4v;
 var xml;
 describe('Parser', function () {
-    var tree = mp4.parse(m4v);
-    var finder = new mp4.Finder(tree);
+    var tree = Mp4.parse(m4v);
+    var finder = new Mp4.Finder(tree);
     var $xml = $(xml);
     describe('FileTypeBox', function () {
         var $ftyp = $xml.find('FileTypeBox');
@@ -67,7 +67,7 @@ describe('Parser', function () {
             it('size', function () {
                 return expect(trak.byteLength).toBe(+$info.attr('Size'));
             });
-            var _finder = new mp4.Finder(trak);
+            var _finder = new Mp4.Finder(trak);
             describe('TrackHeaderBox', function () {
                 var finder = _finder;
                 var $tkhd = $trak.find('TrackHeaderBox');
@@ -356,7 +356,7 @@ describe('Parser', function () {
             it('size', function () {
                 return expect(trak.byteLength).toBe(+$info.attr('Size'));
             });
-            var _finder = new mp4.Finder(trak);
+            var _finder = new Mp4.Finder(trak);
             describe('TrackHeaderBox', function () {
                 var finder = _finder;
                 var $tkhd = $trak.find('TrackHeaderBox');

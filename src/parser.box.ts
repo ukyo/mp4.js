@@ -1,4 +1,4 @@
-module mp4.parser {
+module Mp4.Parser {
 
   var handlerType: string;
 
@@ -412,7 +412,7 @@ module mp4.parser {
       ret.channelcount = this.readUint16();
       ret.samplesize = this.readUint16();
       this.skipBytes(4);
-      ret.samplerate = this.readUint32() >>> 16;
+      ret.samplerate = this.readUint32() / 0x10000;
       return ret;
     }
   }
@@ -510,15 +510,14 @@ module mp4.parser {
 
     parse(): ISampleToChunkBox {
       var ret = <ISampleToChunkBox>super.parse();
-      var view = new DataView2(this.bytes);
-      var offset = 12;
-      var entryCount = view.getUint32(offset);
+      var entryCount = this.readUint32();
+      ret.entryCount = entryCount;
       ret.entries = [];
       for (var i = 0; i < entryCount; ++i) {
         ret.entries.push({
-          firstChunk: view.getUint32(offset += 4),
-          samplesPerChunk: view.getUint32(offset += 4),
-          sampleDescriptionIndex: view.getUint32(offset += 4)
+          firstChunk: this.readUint32(),
+          samplesPerChunk: this.readUint32(),
+          sampleDescriptionIndex: this.readUint32()
         });
       }
       return ret;
@@ -740,9 +739,9 @@ module mp4.parser {
   export var createBoxParser = (() => {
     var Parsers = {};
 
-    Object.keys(parser).forEach((key: string) => {
-      var Parser = parser[key];
-      if (Parser.type) Parsers[Parser.type] = Parser;
+    Object.keys(Parser).forEach((key: string) => {
+      var _Parser = Parser[key];
+      if (_Parser.type) Parsers[_Parser.type] = _Parser;
     });
 
     return (bytes: Uint8Array, type: string): BoxParser => {

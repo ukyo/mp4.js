@@ -736,17 +736,15 @@ module Mp4.Parser {
    * @param bytes
    * @param type A box type.
    */
-  export var createBoxParser = (() => {
-    var Parsers = {};
-
-    Object.keys(Parser).forEach((key: string) => {
-      var _Parser = Parser[key];
-      if (_Parser.type) Parsers[_Parser.type] = _Parser;
+  export var createBoxParser = (bytes: Uint8Array, type: string): BoxParser => {
+    var _Parser;
+    Object.keys(Parser).some(key => {
+      if (Parser[key].type === type) {
+        _Parser = Parser[key];
+        return true;
+      }
     });
-
-    return (bytes: Uint8Array, type: string): BoxParser => {
-      return new (Parsers[type] || BoxParser)(bytes);
-    }
-  })();
+    return new (_Parser || BoxParser)(bytes);
+  };
 
 }

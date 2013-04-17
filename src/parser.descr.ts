@@ -139,7 +139,7 @@ module Mp4.Parser {
 
   export class IPIdentificationDataSetParser extends DescriptorParser { }
 
-  
+
   export class IPMPDescriptorPointerParser extends DescriptorParser { }
 
 
@@ -148,7 +148,7 @@ module Mp4.Parser {
 
   export class QosDescriptorParser extends DescriptorParser { }
 
-  
+
   export class ExtensionDescriptorParser extends DescriptorParser { }
 
 
@@ -210,21 +210,16 @@ module Mp4.Parser {
   }
 
 
-  export var createDescriptorParser = (() => {
-    var Parsers = {};
-    Object.keys(Parser).forEach((key) => {
-      var _Parser = Parser[key];
-      if (_Parser.tag != null) {
-        if (Array.isArray(_Parser.tag)) {
-          _Parser.tag.forEach(tag => Parsers[tag] = _Parser);
-        } else {
-          Parsers[_Parser.tag] = _Parser;
-        }
+  export var createDescriptorParser = (bytes: Uint8Array, tag: number): DescriptorParser => {
+    var _Parser;
+    Object.keys(Parser).some(key => {
+      var __Parser = Parser[key];
+      if (__Parser.tag === tag || Array.isArray(__Parser) && __Parser.some(tag => __Parser.tag === tag)) {
+        _Parser = __Parser;
+        return true;
       }
     });
-    return (bytes: Uint8Array, tag: number): DescriptorParser => {
-      return new (Parsers[tag] || DescriptorParser)(bytes);
-    };
-  })();
+    return new (_Parser || DescriptorParser)(bytes);
+  };
 
 }

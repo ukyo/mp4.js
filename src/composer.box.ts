@@ -412,12 +412,14 @@ module Mp4.Composer {
   }
 
 
-  var createBoxComposer = (() => {
-    var Composers = {};
-    Object.keys(Composer).forEach(key => {
-      var _Composer = Composer[key];
-      if (_Composer.type) Composers[_Composer.type] = _Composer;
+  var createBoxComposer = (box: IBox): BoxComposer => {
+    var _Composer;
+    Object.keys(Composer).some(key => {
+      if (Composer[key].type === box.type) {
+        _Composer = Composer[key];
+        return true;
+      }
     });
-    return (box: IBox): BoxComposer => new Composers[box.type](box);
-  })();
+    return new (_Composer || BoxComposer)(box);
+  };
 }

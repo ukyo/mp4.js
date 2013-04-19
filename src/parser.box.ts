@@ -1,7 +1,5 @@
 module Mp4.Parser {
 
-  var handlerType: string;
-
   var getBoxInfo = (bytes: Uint8Array, offset: number = 0): IBox => {
     var view = new DataView2(bytes, offset);
     return {
@@ -21,23 +19,24 @@ module Mp4.Parser {
   };
 
 
-  export class RootParser extends BaseParser {
-    constructor(bytes: Uint8Array) { super(bytes); }
+  export class BoxParserMixin extends BaseParser {
+    readBox(): IBox {
+      var info = getBoxInfo(this.bytes, this.byteOffset);
+      return createBoxParser(this.readBytes(info.byteLength), info.type).parse();
+    }
+  }
 
+
+  export class RootParser extends BoxParserMixin {
     parse(): IBox[] {
-      var info: IBox;
       var ret: IBox[] = [];
-      while (!this.eof()) {
-        info = getBoxInfo(this.readBytes(8));
-        this.skipBytes(-8);
-        ret.push(createBoxParser(this.readBytes(info.byteLength), info.type).parse());
-      }
+      while (!this.eof()) ret.push(this.readBox());
       return ret;
     }
   }
 
 
-  export class BoxParser extends BaseParser {
+  export class BoxParser extends BoxParserMixin {
     static type = '';
     byteLength: number;
     type: string;
@@ -96,12 +95,7 @@ module Mp4.Parser {
     parse(): IBoxList {
       var ret = <IBoxList>super.parse();
       var boxes: IBox[] = [];
-      var info: IBox;
-      while (!this.eof()) {
-        info = getBoxInfo(this.readBytes(8));
-        this.skipBytes(-8);
-        boxes.push(createBoxParser(this.readBytes(info.byteLength), info.type).parse());
-      }
+      while (!this.eof()) boxes.push(this.readBox());
       ret.boxes = boxes;
       return ret;
     }
@@ -297,9 +291,7 @@ module Mp4.Parser {
       ret.entryCount = this.readUint32();
       ret.entries = [];
       while (!this.eof()) {
-        var info = getBoxInfo(this.readBytes(8));
-        this.skipBytes(-8);
-        ret.entries.push(<IDataEntryBox>createBoxParser(this.readBytes(info.byteLength), info.type).parse());
+        ret.entries.push(<IDataEntryBox>this.readBox());
       }
       return ret;
     }
@@ -434,9 +426,7 @@ module Mp4.Parser {
 
     parse(): IMP4VisualSampleEntry {
       var ret = <IMP4VisualSampleEntry>super.parse();
-      var info = getBoxInfo(this.readBytes(8));
-      this.skipBytes(-8);
-      ret.esBox = new ESDBoxParser(this.readBytes(info.byteLength)).parse();
+      ret.esBox = <IESDBox>this.readBox();
       return ret;
     }
   }
@@ -447,9 +437,7 @@ module Mp4.Parser {
 
     parse(): IMP4AudioSampleEntry {
       var ret = <IMP4AudioSampleEntry>super.parse();
-      var info = getBoxInfo(this.readBytes(8));
-      this.skipBytes(-8);
-      ret.esBox = new ESDBoxParser(this.readBytes(info.byteLength)).parse();
+      ret.esBox = <IESDBox>this.readBox();
       return ret;
     }
   }
@@ -460,9 +448,7 @@ module Mp4.Parser {
 
     parse(): IMpegSampleEntry {
       var ret = <IMpegSampleEntry>super.parse();
-      var info = getBoxInfo(this.readBytes(8));
-      this.skipBytes(-8);
-      ret.esBox = new ESDBoxParser(this.readBytes(info.byteLength)).parse();
+      ret.esBox = <IESDBox>this.readBox();
       return ret;
     }
   }
@@ -477,9 +463,7 @@ module Mp4.Parser {
       ret.entryCount = entryCount;
       ret.boxes = [];
       for (var i = 0; i < entryCount; ++i) {
-        var info = getBoxInfo(this.readBytes(8));
-        this.skipBytes(-8);
-        ret.boxes.push(createBoxParser(this.readBytes(info.byteLength), info.type).parse());
+        ret.boxes.push(this.readBox());
       }
       return ret;
     }
@@ -731,6 +715,391 @@ module Mp4.Parser {
     }
   }
 
+
+  export class TrackRunBoxParser extends FullBoxParser {
+    static type = 'trun';
+
+    parse(): ITrackRunBox {
+      var ret = <ITrackRunBox>super.parse();
+      var sampleCount = this.readUint32();
+      ret.sampleCount = sampleCount;
+      if (ret.flags & 0x000001) ret.dataOffset = this.readInt32();
+      if (ret.flags & 0x000002) ret.firstSampleFlats = this.readUint32();
+      ret.samples = [];
+      for (var i = 0; i < sampleCount; ++i) {
+        ret.samples.push({
+          sampleDuration: (ret.flags & 0x000100) ? this.readUint32() : void 0,
+          sampleSize: (ret.flags & 0x000200) ? this.readUint32() : void 0,
+          sampleFlags: (ret.flags & 0x000400) ? this.readUint32() : void 0,
+          sampleCompositionTimeOffset: (ret.flags & 0x000800) ? this.readUint32() : void 0
+        });
+      }
+      return ret;
+    }
+  }
+
+
+  export class TrackFragmentRandomAccessBoxParser extends FullBoxParser {
+    static type = 'tfra';
+
+    parse(): ITrackFragmentRandomAccessBox {
+      var ret = <ITrackFragmentRandomAccessBox>super.parse();
+      ret.trackID = this.readUint32();
+      this.skipBits(26);
+      ret.lengthSizeOfTrafNum = this.readBits(2);
+      ret.lengthSizeOfTrunNum = this.readBits(2);
+      ret.lengthSizeOfSampleNum = this.readBits(2);
+      var numberOfEntry = this.readUint32();
+      ret.numberOfEntry = numberOfEntry;
+      ret.entries = [];
+      for (var i = 0; i < numberOfEntry; ++i) {
+        ret.entries.push({
+          time: this.readUint32(),
+          moofOffset: this.readUint32(),
+          trafNumber: this.readBits((ret.lengthSizeOfTrafNum + 1) * 8),
+          trunNumber: this.readBits((ret.lengthSizeOfTrunNum + 1) * 8),
+          sampleNumber: this.readBits((ret.lengthSizeOfSampleNum + 1) * 8)
+        });
+      }
+      return ret;
+    }
+  }
+
+
+  export class MovieFragmentRandomAccessOffsetBoxParser extends FullBoxParser {
+    static type = 'mfro';
+
+    parse(): IMovieFragmentRandomAccessOffsetBox {
+      var ret = <IMovieFragmentRandomAccessOffsetBox>super.parse();
+      ret.size = this.readUint32();
+      return ret;
+    }
+  }
+
+
+  export class SampleDependencyTypeBoxParser extends FullBoxParser {
+    static type = 'sdtp';
+
+    parse(): ISampleDependencyTypeBox {
+      var ret = <ISampleDependencyTypeBox>super.parse();
+      ret.samples = [];
+      while (!this.eof()) {
+        this.skipBits(2);
+        ret.samples.push({
+          sampleDependsOn: this.readBits(2),
+          sampleIsDependedOn: this.readBits(2),
+          sampleHasRedundancy: this.readBits(2)
+        });
+      }
+      return ret;
+    }
+  }
+
+
+  export class SampleToGroupBoxParser extends FullBoxParser {
+    static type = 'sbgp';
+
+    parse(): ISampleToGroupBox {
+      var ret = <ISampleToGroupBox>super.parse();
+      ret.groupintType = this.readUint32();
+      var entryCount = this.readUint32();
+      ret.entryCount = entryCount;
+      ret.entries = [];
+      for (var i = 0; i < entryCount; ++i) {
+        ret.entries.push({
+          sampleCount: this.readUint32(),
+          groupDescriptionIndex: this.readUint32()
+        });
+      }
+      return ret;
+    }
+  }
+
+
+  export class SampleGroupDescriptionEntryParser extends BoxParser { }
+
+
+  export class VisualSampleGroupEntryParser extends SampleGroupDescriptionEntryParser { }
+
+
+  export class AudioSampleGroupEntryParser extends SampleGroupDescriptionEntryParser { }
+
+
+  export class HintSampleGroupEntryParser extends SampleGroupDescriptionEntryParser { }
+
+
+  export class SampleGroupDescriptionBoxParser extends FullBoxParser {
+    static type = 'sgpd';
+
+    parse(): ISampleGroupDescriptionBox {
+      var ret = <ISampleGroupDescriptionBox>super.parse();
+      ret.groupingType = this.readUint32();
+      var entryCount = this.readUint32();
+      ret.entryCount = entryCount;
+      ret.entries = [];
+      for (var i = 0; i < entryCount; ++i) {
+        ret.entries.push(<ISampleGroupDescriptionEntry>this.readBox());
+      }
+      return ret;
+    }
+  }
+
+
+  export class VisualRollRecoveryEntryParser extends VisualSampleGroupEntryParser {
+    static type = 'roll';
+
+    parse(): IVisualRollRecoveryEntry {
+      var ret = <IVisualRollRecoveryEntry>super.parse();
+      ret.rollDistance = this.readInt16();
+      return ret;
+    }
+  }
+
+
+  export class AudioRollRecoveryEntryParser extends VisualSampleGroupEntryParser {
+    static type = 'roll';
+
+    parse(): IAudioRollRecoveryEntry {
+      var ret = <IAudioRollRecoveryEntry>super.parse();
+      ret.rollDistance = this.readInt16();
+      return ret;
+    }
+  }
+
+
+  export class SampleScaleBoxParser extends FullBoxParser {
+    static type = 'stsl';
+
+    parse(): ISampleScaleBox {
+      var ret = <ISampleScaleBox>super.parse();
+      this.skipBits(7);
+      ret.constraintFlag = this.readBits(1);
+      ret.scaleMethod = this.readUint8();
+      ret.displayCenterX = this.readInt16();
+      ret.displayCenterY = this.readInt16();
+      return ret;
+    }
+  }
+
+
+  export class SubSampleInformationBoxParser extends FullBoxParser {
+    static type = 'subs';
+
+    parse(): ISubSampleInformationBox {
+      var ret = <ISubSampleInformationBox>super.parse();
+      var entryCount = this.readUint32();
+      ret.entryCount = entryCount;
+      ret.entries = [];
+      for (var i = 0; i < entryCount; ++i) {
+        var sampleDelta = this.readUint32();
+        var subsampleCount = this.readUint16();
+        var samples = [];
+        for (var j = 0; j < subsampleCount; ++j) {
+          samples.push({
+            subsampleSize: ret.version === 1 ? this.readUint32() : this.readUint16(),
+            subsamplePriority: this.readUint8(),
+            discardable: this.readUint8()
+          });
+          this.skipBytes(4);
+        }
+        ret.entries.push({
+          sampleDelta: sampleDelta,
+          subsampleCount: subsampleCount,
+          samples: samples
+        });
+      }
+      return ret;
+    }
+  }
+
+
+  export class ProgressiveDownloadInfoBoxParser extends FullBoxParser {
+    static type = 'pdin';
+
+    parse(): IProgressiveDownloadInfoBox {
+      var ret = <IProgressiveDownloadInfoBox>super.parse();
+      ret.entries = [];
+      while (!this.eof()) {
+        ret.entries.push({
+          rate: this.readUint32(),
+          initialDelay: this.readUint32()
+        });
+      }
+      return ret;
+    }
+  }
+
+
+  export class MetaBoxParser extends FullBoxParser {
+    static type = 'meta';
+
+    parse(): IMetaBox {
+      var ret = <IMetaBox>super.parse();
+      ret.theHandler = <IHandlerBox>this.readBox();
+      ret.otherBoxes = [];
+      while (!this.eof()) {
+        var box = this.readBox();
+        switch (box.type) {
+          case PrimaryItemBoxParser.type: ret.primaryResource = <IPrimaryItemBox>box; break;
+          case DataInformationBoxParser.type: ret.fileLocations = <IDataInformationBox>box; break;
+          case ItemLocationBoxParser.type: ret.itemLocations = <IItemLocationBox>box; break;
+          case ItemInfoBoxParser.type: ret.itemInfos = <IItemInfoBox>box; break;
+          case ItemProtectionBoxParser.type: ret.protections = <IItemProtectionBox>box; break;
+          case 'ipmc': ret.IPMPControl = <IIPMPControlBox>box; break;
+          default: ret.otherBoxes.push(box);
+        }
+      }
+      return ret;
+    }
+  }
+
+
+  export class XMLBoxParsr extends FullBoxParser {
+    static type = 'xml ';
+
+    parse(): IXMLBox {
+      var ret = <IXMLBox>super.parse();
+      var bytes = this.bytes.subarray(this.byteOffset);
+      ret.xml = DataView2.UTF8BytesToString(bytes);
+      return ret;
+    }
+  }
+
+
+  export class BinaryXMLBoxParser extends FullBoxParser {
+    static type = 'bxml';
+
+    parse(): IBinaryXMLBox {
+      var ret = <IBinaryXMLBox>super.parse();
+      ret.data = this.bytes.subarray(this.byteOffset);
+      return ret;
+    }
+  }
+
+
+  export class ItemLocationBoxParser extends FullBoxParser {
+    static type = 'iloc';
+
+    parse(): IItemLocationBox {
+      var ret = <IItemLocationBox>super.parse();
+      ret.offsetSize = this.readBits(4);
+      ret.lengthSize = this.readBits(4);
+      ret.baseOffsetSize = this.readBits(4);
+      this.skipBits(4);
+      var itemCount = ret.itemCount = this.readUint16();
+      ret.items = [];
+      for (var i = 0; i < itemCount; ++i) {
+        var itemID = this.readUint16();
+        var dataReferenceIndex = this.readUint16();
+        var baseOffset = this.readBits(ret.baseOffsetSize * 8);
+        var extentCount = this.readUint16();
+        var extents = [];
+        for (var j = 0; j < extentCount; ++j) {
+          extents.push({
+            extentOffset: this.readBits(ret.offsetSize * 8),
+            extentLength: this.readBits(ret.lengthSize * 8)
+          });
+        }
+        ret.items.push({
+          itemID: itemID,
+          dataReferenceIndex: dataReferenceIndex,
+          baseOffset: baseOffset,
+          extentCount: extentCount,
+          extents: extents
+        });
+      }
+      return ret;
+    }
+  }
+
+
+  export class PrimaryItemBoxParser extends FullBoxParser {
+    static type = 'pitm';
+
+    parse(): IPrimaryItemBox {
+      var ret = <IPrimaryItemBox>super.parse();
+      ret.itemID = this.readUint16();
+      return ret;
+    }
+  }
+
+
+  export class ItemProtectionBoxParser extends FullBoxParser {
+    static type = 'ipro';
+
+    parse(): IItemProtectionBox {
+      var ret = <IItemProtectionBox>super.parse();
+      var protectionCount = ret.protectionCount = this.readUint16();
+      ret.protectionInformations = [];
+      for (var i = 0; i < protectionCount; ++i) {
+        ret.protectionInformations.push(<IProtectionSchemeInfoBox>this.readBox());
+      }
+      return ret;
+    }
+  }
+
+
+  export class ItemInfoEntryParser extends FullBoxParser {
+    static type = 'infe';
+
+    parse(): IItemInfoEntry {
+      var ret = <IItemInfoEntry>super.parse();
+      ret.itemID = this.readUint16();
+      ret.itemProtectionIndex = this.readUint16();
+      ret.itemName = this.readUTF8StringNullTerminated();
+      ret.contentType = this.readUTF8StringNullTerminated();
+      ret.contentEncoding = this.readString();
+      return ret;
+    }
+  }
+
+
+  export class ItemInfoBoxParser extends FullBoxParser {
+    static type = 'iinf';
+
+    parse(): IItemInfoBox {
+      var ret = <IItemInfoBox>super.parse();
+      var entryCount = ret.entryCount = this.readUint16();
+      ret.itemInfos = [];
+      for (var i = 0; i < entryCount; ++i) {
+        ret.itemInfos.push(<IItemInfoEntry>this.readBox());
+      }
+      return ret;
+    }
+  }
+
+
+  export class ProtectionSchemeInfoBoxParser extends BoxParser {
+    static type = 'sinf';
+
+    parse(): IProtectionSchemeInfoBox {
+      var ret = <IProtectionSchemeInfoBox>super.parse();
+      ret.originalFormat = <IOriginalFormatBox>this.readBox();
+      while (!this.eof()) {
+        var box = this.readBox();
+        switch (box.type) {
+          case IPMPInfoBoxParser.type: ret.IPMPDescriptors = <IIPMPInfoBox>this.readBox(); break;
+        }
+      }
+      return ret;
+    }
+  }
+
+
+  export class OriginalFormatBoxParser extends BoxParser {
+    static type = 'frma';
+
+    parse(): IOriginalFormatBox {
+      var ret = <IOriginalFormatBox>super.parse();
+      ret.dataFormat = this.readString(4);
+      return ret;
+    }
+  }
+
+
+  export class IPMPInfoBoxParser extends FullBoxParser {
+    static type = 'imif';
+  }
   /**
    * Create a box parser by the box type.
    * @param bytes

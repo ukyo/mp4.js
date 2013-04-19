@@ -276,6 +276,7 @@ module Mp4 {
   export interface ITrackRunBox extends IFullBox {
     sampleCount: number; // unsigned int(32)
     dataOffset?: number; // int(32)
+    firstSampleFlats?: number; // unsigned int(32)
     samples?: {
       sampleDuration?: number; // unsigned int(32)
       sampleSize?: number; // unsigned int(32)
@@ -323,7 +324,7 @@ module Mp4 {
     }[];
   }
 
-  export interface ISampleGroupDescriptionEntry {
+  export interface ISampleGroupDescriptionEntry extends IBox {
     handlerType: string; // unsigned int(32)
   }
 
@@ -334,7 +335,7 @@ module Mp4 {
   export interface IHintSampleGroupEntry extends ISampleGroupDescriptionEntry {}
 
   export interface ISampleGroupDescriptionBox extends IFullBox {
-    groupintType: number; // unsigned int(32)
+    groupingType: number; // unsigned int(32)
     entryCount: number; // unsigned int(32)
     entries: ISampleGroupDescriptionEntry[];
   }
@@ -370,7 +371,7 @@ module Mp4 {
   export interface IProgressiveDownloadInfoBox extends IFullBox {
     entries: {
       rate: number; // unsigned int(32)
-      intitalDelay: number; // unsigned int(32)
+      initialDelay: number; // unsigned int(32)
     }[];
   }
 
@@ -379,7 +380,7 @@ module Mp4 {
     primaryResource?: IPrimaryItemBox;
     fileLocations?: IDataInformationBox;
     itemLocations?: IItemLocationBox;
-    protectionss?: IItemProtectionBox;
+    protections?: IItemProtectionBox;
     itemInfos?: IItemInfoBox;
     IPMPControl?: IIPMPControlBox;
     otherBoxes?: IBox[];
@@ -444,7 +445,7 @@ module Mp4 {
   }
 
   export interface IOriginalFormatBox extends IBox {
-    dataFormat: number; // unsigned int(32)
+    dataFormat: string; // unsigned int(32)
   }
 
   export interface IIPMPInfoBox extends IFullBox {

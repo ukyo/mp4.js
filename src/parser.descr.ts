@@ -1,6 +1,6 @@
 module Mp4.Parser {
 
-  export var getDescrInfo = (bytes: Uint8Array, offset: number = 0): IDescriptor => {
+  export var getDescriptorInfo = (bytes: Uint8Array, offset: number = 0): IDescriptor => {
     var tag = bytes[offset++];
     var b = bytes[offset++];
     var bodyLength = b & 0x7F;
@@ -14,29 +14,27 @@ module Mp4.Parser {
     return {
       tag: tag,
       byteLength: headerLength + bodyLength,
+      headerLength: headerLength,
       bodyLength: bodyLength
     };
   };
 
-  export class DescriptorParser extends BaseParser {
+  export class DescriptorParserMixin extends BaseParser {
+    readDescriptor(): IDescriptor {
+      var info = getDescriptorInfo(this.bytes, this.byteOffset);
+      return createDescriptorParser(this.readBytes(info.byteLength), info.tag).parse();
+    }
+  }
+
+  export class DescriptorParser extends DescriptorParserMixin {
     static tag: number;
     tag: number;
 
     parse(): IDescriptor {
-      var info = getDescrInfo(this.bytes);
-      this.skipBytes(this.getBodyOffset());
-      return {
-        byteLength: this.bytes.byteLength,
-        bodyLength: info.bodyLength,
-        tag: this.bytes[0],
-        bytes: this.bytes
-      };
-    }
-
-    getBodyOffset(): number {
-      var offset = 1;
-      while (this.bytes[offset++] & 0x80);
-      return offset;
+      var info = getDescriptorInfo(this.bytes);
+      this.skipBytes(info.headerLength);
+      info.bytes = this.bytes;
+      return info;
     }
   }
 
@@ -76,7 +74,7 @@ module Mp4.Parser {
       ret.profileLevelIndicationIndexDescrs = [];
 
       while (!this.eof()) {
-        info = getDescrInfo(this.bytes.subarray(this.byteOffset));
+        info = getDescriptorInfo(this.bytes.subarray(this.byteOffset));
         descrParser = createDescriptorParser(this.readBytes(info.byteLength), info.tag);
         descr = descrParser.parse();
         if (descrParser instanceof DecoderSpecificInfoParser) {
@@ -183,7 +181,7 @@ module Mp4.Parser {
       ret.extDescrs = [];
 
       while (!this.eof()) {
-        info = getDescrInfo(this.bytes.subarray(this.byteOffset));
+        info = getDescriptorInfo(this.bytes.subarray(this.byteOffset));
         descrParser = createDescriptorParser(this.readBytes(info.byteLength), info.tag);
         descr = descrParser.parse();
         if (descrParser instanceof DecoderConfigDescriptorParser) {

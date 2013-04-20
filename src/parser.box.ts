@@ -19,7 +19,7 @@ module Mp4.Parser {
   };
 
 
-  export class BoxParserMixin extends BaseParser {
+  export class BoxParserMixin extends DescriptorParserMixin {
     readBox(): IBox {
       var info = getBoxInfo(this.bytes, this.byteOffset);
       return createBoxParser(this.readBytes(info.byteLength), info.type).parse();
@@ -415,8 +415,7 @@ module Mp4.Parser {
 
     parse(): IESDBox {
       var ret = <IESDBox>super.parse();
-      var descrInfo = getDescrInfo(this.bytes, 12);
-      ret.esDescr = new ESDescriptorParser(this.readBytes(descrInfo.byteLength)).parse();
+      ret.esDescr = <IESDescriptor>this.readDescriptor();
       return ret;
     }
   }
@@ -1099,6 +1098,15 @@ module Mp4.Parser {
 
   export class IPMPInfoBoxParser extends FullBoxParser {
     static type = 'imif';
+
+    parse(): IIPMPInfoBox {
+      var ret = <IIPMPInfoBox>super.parse();
+      ret.ipmpDescrs = [];
+      while (!this.eof()) {
+        ret.ipmpDescrs.push(<IIPMPDescriptor>this.readDescriptor());
+      }
+      return ret;
+    }
   }
   /**
    * Create a box parser by the box type.

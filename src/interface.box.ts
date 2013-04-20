@@ -449,7 +449,7 @@ module Mp4 {
   }
 
   export interface IIPMPInfoBox extends IFullBox {
-    ipmpDesc: IIPMPDescriptorPointer[];
+    ipmpDescrs: IIPMPDescriptorPointer[];
   }
 
   export interface ISchemeInformationBox extends IFullBox {

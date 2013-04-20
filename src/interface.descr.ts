@@ -2,8 +2,9 @@ module Mp4 {
   
   export interface IDescriptor {
     tag: number;
-    byteLength: number;
-    bodyLength: number;
+    byteLength?: number;
+    headerLength?: number;
+    bodyLength?: number;
     bytes?: Uint8Array;
   }
 

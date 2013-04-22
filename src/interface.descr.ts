@@ -18,11 +18,11 @@ module Mp4 {
     urlString?: string;
     decConfigDescr: IDecoderConfigDescriptor;
     slConfigDescr: ISLConfigDescriptor;
-    ipiPtr?: IIPIDescriptorPointer;
+    ipiPtr?: IIPIDescPointer;
     ipIDSs?: IIPIdentificationDataSet[];
     ipmpDescrPtrs?: IIPMPDescriptorPointer[];
     langDescrs?: ILanguageDescriptor[];
-    qosDescr?: IQosDescriptor;
+    qosDescr?: IQoSDescriptor;
     extDescrs?: IExtensionDescriptor[];
   }
 
@@ -33,11 +33,11 @@ module Mp4 {
     bufferSizeDB: number; // bit(24)
     maxBitrate: number; // bit(32)
     avgBitrate: number; // bit(32)
-    decSpecificInfo?: IDecoderSpecofocInfo;
+    decSpecificInfo?: IDecoderSpecificInfo;
     profileLevelIndicationIndexDescrs?: IProfileLevelIndicationIndexDescriptor[];
   }
 
-  export interface IDecoderSpecofocInfo extends IDescriptor {
+  export interface IDecoderSpecificInfo extends IDescriptor {
 
   }
 
@@ -45,8 +45,8 @@ module Mp4 {
     profileLevelIndicationIndex: number; // bit(8)
   }
 
-  export interface IIPIDescriptorPointer {
-
+  export interface IIPIDescPointer extends IDescriptor {
+    ipiEsID: number; // bit(16)
   }
 
   export interface ISLConfigDescriptor extends IDescriptor {
@@ -83,7 +83,13 @@ module Mp4 {
 
   export interface ILanguageDescriptor extends IDescriptor {}
 
-  export interface IQosDescriptor extends IDescriptor {}
+  export interface IQoSDescriptor extends IDescriptor {
+    preDefined: number; // bit(8)
+    qosQualifierCount?: number; // bit(8)
+    qosQualifierTag?: number[]; // bit(8)[]
+    qosQualifierLength?: number[]; // bit(8)[]
+    qosQualifierData?: number[][]; // bit(8)[][qosQualifierLength[i]]
+  }
   
   export interface IExtensionDescriptor extends IDescriptor {}
 

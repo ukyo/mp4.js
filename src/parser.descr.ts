@@ -78,7 +78,7 @@ module Mp4.Parser {
         descrParser = createDescriptorParser(this.readBytes(info.byteLength), info.tag);
         descr = descrParser.parse();
         if (descrParser instanceof DecoderSpecificInfoParser) {
-          ret.decSpecificInfo = <IDecoderSpecofocInfo>descr;
+          ret.decSpecificInfo = <IDecoderSpecificInfo>descr;
         } else if (descrParser instanceof ProfileLevelINdicationIndexDescriptor) {
           ret.profileLevelIndicationIndexDescrs.push(<IProfileLevelIndicationIndexDescriptor>descr);
         } else {
@@ -189,13 +189,13 @@ module Mp4.Parser {
         } else if (descrParser instanceof SLConfigDescriptorParser) {
           ret.slConfigDescr = <ISLConfigDescriptor>descr;
         } else if (descrParser instanceof IPIDescriptorPointerParser) {
-          ret.ipiPtr = descr;
+          ret.ipiPtr = <IIPIDescPointer>descr;
         } else if (descrParser instanceof IPIdentificationDataSetParser) {
           ret.ipIDSs.push(<IIPIdentificationDataSet>descr);
         } else if (descrParser instanceof LanguageDescriptorParser) {
           ret.langDescrs.push(<ILanguageDescriptor>descr);
         } else if (descrParser instanceof QosDescriptorParser) {
-          ret.qosDescr = <IQosDescriptor>descr;
+          ret.qosDescr = <IQoSDescriptor>descr;
         } else if (descrParser instanceof ExtensionDescriptorParser) {
           ret.extDescrs.push(<IExtensionDescriptor>descr);
         } else {

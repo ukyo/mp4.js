@@ -1,3 +1,5 @@
+/// <reference path="mp4.ts" />
+
 module Mp4.Parser {
 
   var getBoxInfo = (bytes: Uint8Array, offset: number = 0): IBox => {

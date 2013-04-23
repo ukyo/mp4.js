@@ -1,3 +1,5 @@
+/// <reference path="mp4.ts" />
+
 module Mp4.Parser {
 
   var BIT_MASKS: number[] = [

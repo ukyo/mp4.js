@@ -1,3 +1,5 @@
+/// <reference path="mp4.ts" />
+
 module Mp4.Parser {
 
   export var getDescriptorInfo = (bytes: Uint8Array, offset: number = 0): IDescriptor => {

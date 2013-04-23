@@ -37,7 +37,7 @@ module Mp4.Parser {
 
 
   export class BoxParser extends BoxParserMixin {
-    static type = '';
+    static TYPE = '';
     byteLength: number;
     type: string;
 
@@ -78,7 +78,7 @@ module Mp4.Parser {
 
 
   export class FileTypeBoxParser extends BoxParser {
-    static type = 'ftyp';
+    static TYPE = 'ftyp';
 
     parse(): IFileTypeBox {
       var ret = <IFileTypeBox>super.parse();
@@ -103,12 +103,12 @@ module Mp4.Parser {
 
 
   export class MovieBoxParser extends BoxListParser {
-    static type = 'moov';
+    static TYPE = 'moov';
   }
 
 
   export class MediaDataBoxParser extends BoxParser {
-    static type = 'mdat';
+    static TYPE = 'mdat';
 
     parse(): IMediaDataBox {
       var ret = <IMediaDataBox>super.parse();
@@ -119,7 +119,7 @@ module Mp4.Parser {
 
 
   export class MovieHeaderBoxParser extends FullBoxParser {
-    static type = 'mvhd';
+    static TYPE = 'mvhd';
 
     parse(): IMovieHeaderBox {
       var ret = <IMovieHeaderBox>super.parse();
@@ -141,12 +141,12 @@ module Mp4.Parser {
 
 
   export class TrackBoxParser extends BoxListParser {
-    static type = 'trak';
+    static TYPE = 'trak';
   }
 
 
   export class TrackHeaderBoxParser extends FullBoxParser {
-    static type = 'tkhd';
+    static TYPE = 'tkhd';
 
     parse(): ITrackHeaderBox {
       var ret = <ITrackHeaderBox>super.parse();
@@ -170,7 +170,7 @@ module Mp4.Parser {
 
 
   export class TrackReferenceBox extends BoxListParser {
-    static type = 'tref';
+    static TYPE = 'tref';
   }
 
 
@@ -185,22 +185,22 @@ module Mp4.Parser {
 
 
   export class TrackReferenceTypeHintBox extends TrackReferenceTypeBox {
-    static type = 'hint';
+    static TYPE = 'hint';
   }
 
 
   export class TrackReferenceTypeDiscribeBox extends TrackReferenceTypeBox {
-    static type = 'cdsc';
+    static TYPE = 'cdsc';
   }
 
 
   export class MediaBoxParser extends BoxListParser {
-    static type = 'mdia';
+    static TYPE = 'mdia';
   }
 
 
   export class MediaHeaderBoxParser extends FullBoxParser {
-    static type = 'mdhd';
+    static TYPE = 'mdhd';
 
     parse(): IMediaHeaderBox {
       var ret = <IMediaHeaderBox>super.parse();
@@ -216,7 +216,7 @@ module Mp4.Parser {
 
 
   export class HandlerBoxParser extends FullBoxParser {
-    static type = 'hdlr';
+    static TYPE = 'hdlr';
 
     parse(): IHandlerBox {
       var ret = <IHandlerBox>super.parse();
@@ -230,12 +230,12 @@ module Mp4.Parser {
 
 
   export class MediaInformationBoxParser extends BoxListParser {
-    static type = 'minf';
+    static TYPE = 'minf';
   }
 
 
   export class VideoMediaHeaderBoxParser extends FullBoxParser {
-    static type = 'vmhd';
+    static TYPE = 'vmhd';
 
     parse(): IVideoMediaHeaderBox {
       var ret = <IVideoMediaHeaderBox>super.parse();
@@ -249,7 +249,7 @@ module Mp4.Parser {
 
 
   export class SoundMediaHeaderBoxParser extends FullBoxParser {
-    static type = 'smhd';
+    static TYPE = 'smhd';
 
     parse(): ISoundMediaHeaderBox {
       var ret = <ISoundMediaHeaderBox>super.parse();
@@ -260,7 +260,7 @@ module Mp4.Parser {
 
 
   export class HindMediaHeaderBoxParser extends FullBoxParser {
-    static type = 'hmhd';
+    static TYPE = 'hmhd';
 
     parse(): IHintMediaHeaderBox {
       var ret = <IHintMediaHeaderBox>super.parse();
@@ -274,17 +274,17 @@ module Mp4.Parser {
 
 
   export class NullMediaHeaderBoxParser extends FullBoxParser {
-    static type = 'nmhd';
+    static TYPE = 'nmhd';
   }
 
 
   export class DataInformationBoxParser extends BoxListParser {
-    static type = 'dinf';
+    static TYPE = 'dinf';
   }
 
 
   export class DataReferenceBoxParser extends FullBoxParser {
-    static type = 'dref';
+    static TYPE = 'dref';
 
     parse(): IDataReferenceBox {
       var ret = <IDataReferenceBox>super.parse();
@@ -299,7 +299,7 @@ module Mp4.Parser {
 
 
   export class DataEntryUrlBoxParser extends FullBoxParser {
-    static type = 'url ';
+    static TYPE = 'url ';
 
     parse(): IDataEntryUrlBox {
       var ret = <IDataEntryUrlBox>super.parse();
@@ -310,7 +310,7 @@ module Mp4.Parser {
 
 
   export class DataEntryUrnBoxParser extends FullBoxParser {
-    static type = 'urn ';
+    static TYPE = 'urn ';
 
     parse(): IDataEntryUrnBox {
       var ret = <IDataEntryUrnBox>super.parse();
@@ -322,12 +322,12 @@ module Mp4.Parser {
 
 
   export class SampleTableBoxParser extends BoxListParser {
-    static type = 'stbl';
+    static TYPE = 'stbl';
   }
 
 
   export class TimeToSampleBoxParser extends FullBoxParser {
-    static type = 'stts';
+    static TYPE = 'stts';
 
     parse(): ITimeToSampleBox {
       var ret = <ITimeToSampleBox>super.parse();
@@ -346,7 +346,7 @@ module Mp4.Parser {
 
 
   export class CompositionOffsetBoxParser extends FullBoxParser {
-    static type = 'ctts';
+    static TYPE = 'ctts';
 
     parse(): ICompositionOffsetBox {
       var ret = <ICompositionOffsetBox>super.parse();
@@ -411,7 +411,7 @@ module Mp4.Parser {
 
 
   export class ESDBoxParser extends FullBoxParser {
-    static type = 'esds';
+    static TYPE = 'esds';
 
     parse(): IESDBox {
       var ret = <IESDBox>super.parse();
@@ -421,7 +421,7 @@ module Mp4.Parser {
   }
 
   export class MP4VisualSampleEntryParser extends VisualSampleEntryParser {
-    static type = 'mp4v';
+    static TYPE = 'mp4v';
 
     parse(): IMP4VisualSampleEntry {
       var ret = <IMP4VisualSampleEntry>super.parse();
@@ -432,7 +432,7 @@ module Mp4.Parser {
 
 
   export class MP4AudioSampleEntryParser extends AudioSampleEntryParser {
-    static type = 'mp4a';
+    static TYPE = 'mp4a';
 
     parse(): IMP4AudioSampleEntry {
       var ret = <IMP4AudioSampleEntry>super.parse();
@@ -443,7 +443,7 @@ module Mp4.Parser {
 
 
   export class MpegSampleEntryParser extends SampleEntryParser {
-    static type = 'mp4s';
+    static TYPE = 'mp4s';
 
     parse(): IMpegSampleEntry {
       var ret = <IMpegSampleEntry>super.parse();
@@ -454,7 +454,7 @@ module Mp4.Parser {
 
 
   export class SampleDescriptionBoxParser extends FullBoxParser {
-    static type = 'stsd';
+    static TYPE = 'stsd';
 
     parse(): ISampleDescriptionBox {
       var ret = <ISampleDescriptionBox>super.parse();
@@ -470,7 +470,7 @@ module Mp4.Parser {
 
 
   export class SampleSizeBoxParser extends FullBoxParser {
-    static type = 'stsz';
+    static TYPE = 'stsz';
 
     parse(): ISampleSizeBox {
       var ret = <ISampleSizeBox>super.parse();
@@ -489,7 +489,7 @@ module Mp4.Parser {
 
 
   export class SampleToChunkBoxParser extends FullBoxParser {
-    static type = 'stsc';
+    static TYPE = 'stsc';
 
     parse(): ISampleToChunkBox {
       var ret = <ISampleToChunkBox>super.parse();
@@ -509,7 +509,7 @@ module Mp4.Parser {
 
 
   export class ChunkOffsetBoxParser extends FullBoxParser {
-    static type = 'stco';
+    static TYPE = 'stco';
 
     parse(): IChunkOffsetBox {
       var ret = <IChunkOffsetBox>super.parse();
@@ -525,7 +525,7 @@ module Mp4.Parser {
 
 
   export class SyncSampleBoxParser extends FullBoxParser {
-    static type = 'stss';
+    static TYPE = 'stss';
 
     parse(): ISyncSampleBox {
       var ret = <ISyncSampleBox>super.parse();
@@ -541,7 +541,7 @@ module Mp4.Parser {
 
 
   export class ShadowSyncSampleBoxParser extends FullBoxParser {
-    static type = 'stsh';
+    static TYPE = 'stsh';
 
     parse(): IShadowSyncSampleBox {
       var ret = <IShadowSyncSampleBox>super.parse();
@@ -560,7 +560,7 @@ module Mp4.Parser {
 
 
   export class DegradationPriorityBoxParser extends FullBoxParser {
-    static type = 'stdp';
+    static TYPE = 'stdp';
 
     parse(): IDegradationPriorityBox {
       var ret = <IDegradationPriorityBox>super.parse();
@@ -574,7 +574,7 @@ module Mp4.Parser {
 
 
   export class PaddingBitsBoxParser extends FullBoxParser {
-    static type = 'padb';
+    static TYPE = 'padb';
 
     parse(): IPaddingBitsBox {
       var ret = <IPaddingBitsBox>super.parse();
@@ -599,22 +599,22 @@ module Mp4.Parser {
 
 
   export class FreeSpaceBoxParser extends MediaBoxParser {
-    static type = 'free';
+    static TYPE = 'free';
   }
 
 
   export class SkipBoxParser extends MediaBoxParser {
-    static type = 'skip';
+    static TYPE = 'skip';
   }
 
 
   export class EditBoxParser extends BoxListParser {
-    static type = 'edts';
+    static TYPE = 'edts';
   }
 
 
   export class EditListBoxParser extends FullBoxParser {
-    static type = 'elst';
+    static TYPE = 'elst';
 
     parse(): IEditListBox {
       var ret = <IEditListBox>super.parse();
@@ -635,7 +635,7 @@ module Mp4.Parser {
 
 
   export class CopyrightBoxParser extends FullBoxParser {
-    static type = 'cprt';
+    static TYPE = 'cprt';
 
     parse(): ICopyrightBox {
       var ret = <ICopyrightBox>super.parse();
@@ -648,12 +648,12 @@ module Mp4.Parser {
 
 
   export class MovieExtendsBoxParser extends BoxListParser {
-    static type = 'mvex';
+    static TYPE = 'mvex';
   }
 
 
   export class MovieExtendsHeaderBoxParser extends FullBoxParser {
-    static type = 'mehd';
+    static TYPE = 'mehd';
 
     parse(): IMovieExtendsHeaderBox {
       var ret = <IMovieExtendsHeaderBox>super.parse();
@@ -664,7 +664,7 @@ module Mp4.Parser {
 
 
   export class TrackExtendsBoxParser extends FullBoxParser {
-    static type = 'trex';
+    static TYPE = 'trex';
 
     parse(): ITrackExtendsBox {
       var ret = <ITrackExtendsBox>super.parse();
@@ -679,12 +679,12 @@ module Mp4.Parser {
 
 
   export class MovieFlagmentBoxParser extends BoxListParser {
-    static type = 'moof';
+    static TYPE = 'moof';
   }
 
 
   export class MovieFragmentHeaderBoxParser extends FullBoxParser {
-    static type = 'mfhd';
+    static TYPE = 'mfhd';
 
     parse(): IMovieFragmentHeaderBox {
       var ret = <IMovieFragmentHeaderBox>super.parse();
@@ -695,12 +695,12 @@ module Mp4.Parser {
 
 
   export class TrackFragmentBoxParser extends BoxListParser {
-    static type = 'traf';
+    static TYPE = 'traf';
   }
 
 
   export class TrackFragmentHeaderBoxParser extends FullBoxParser {
-    static type = 'tfhd';
+    static TYPE = 'tfhd';
 
     parse(): ITrackFragmentHeaderBox {
       var ret = <ITrackFragmentHeaderBox>super.parse();
@@ -716,7 +716,7 @@ module Mp4.Parser {
 
 
   export class TrackRunBoxParser extends FullBoxParser {
-    static type = 'trun';
+    static TYPE = 'trun';
 
     parse(): ITrackRunBox {
       var ret = <ITrackRunBox>super.parse();
@@ -739,7 +739,7 @@ module Mp4.Parser {
 
 
   export class TrackFragmentRandomAccessBoxParser extends FullBoxParser {
-    static type = 'tfra';
+    static TYPE = 'tfra';
 
     parse(): ITrackFragmentRandomAccessBox {
       var ret = <ITrackFragmentRandomAccessBox>super.parse();
@@ -766,7 +766,7 @@ module Mp4.Parser {
 
 
   export class MovieFragmentRandomAccessOffsetBoxParser extends FullBoxParser {
-    static type = 'mfro';
+    static TYPE = 'mfro';
 
     parse(): IMovieFragmentRandomAccessOffsetBox {
       var ret = <IMovieFragmentRandomAccessOffsetBox>super.parse();
@@ -777,7 +777,7 @@ module Mp4.Parser {
 
 
   export class SampleDependencyTypeBoxParser extends FullBoxParser {
-    static type = 'sdtp';
+    static TYPE = 'sdtp';
 
     parse(): ISampleDependencyTypeBox {
       var ret = <ISampleDependencyTypeBox>super.parse();
@@ -796,7 +796,7 @@ module Mp4.Parser {
 
 
   export class SampleToGroupBoxParser extends FullBoxParser {
-    static type = 'sbgp';
+    static TYPE = 'sbgp';
 
     parse(): ISampleToGroupBox {
       var ret = <ISampleToGroupBox>super.parse();
@@ -828,7 +828,7 @@ module Mp4.Parser {
 
 
   export class SampleGroupDescriptionBoxParser extends FullBoxParser {
-    static type = 'sgpd';
+    static TYPE = 'sgpd';
 
     parse(): ISampleGroupDescriptionBox {
       var ret = <ISampleGroupDescriptionBox>super.parse();
@@ -845,7 +845,7 @@ module Mp4.Parser {
 
 
   export class VisualRollRecoveryEntryParser extends VisualSampleGroupEntryParser {
-    static type = 'roll';
+    static TYPE = 'roll';
 
     parse(): IVisualRollRecoveryEntry {
       var ret = <IVisualRollRecoveryEntry>super.parse();
@@ -856,7 +856,7 @@ module Mp4.Parser {
 
 
   export class AudioRollRecoveryEntryParser extends VisualSampleGroupEntryParser {
-    static type = 'roll';
+    static TYPE = 'roll';
 
     parse(): IAudioRollRecoveryEntry {
       var ret = <IAudioRollRecoveryEntry>super.parse();
@@ -867,7 +867,7 @@ module Mp4.Parser {
 
 
   export class SampleScaleBoxParser extends FullBoxParser {
-    static type = 'stsl';
+    static TYPE = 'stsl';
 
     parse(): ISampleScaleBox {
       var ret = <ISampleScaleBox>super.parse();
@@ -882,7 +882,7 @@ module Mp4.Parser {
 
 
   export class SubSampleInformationBoxParser extends FullBoxParser {
-    static type = 'subs';
+    static TYPE = 'subs';
 
     parse(): ISubSampleInformationBox {
       var ret = <ISubSampleInformationBox>super.parse();
@@ -913,7 +913,7 @@ module Mp4.Parser {
 
 
   export class ProgressiveDownloadInfoBoxParser extends FullBoxParser {
-    static type = 'pdin';
+    static TYPE = 'pdin';
 
     parse(): IProgressiveDownloadInfoBox {
       var ret = <IProgressiveDownloadInfoBox>super.parse();
@@ -930,7 +930,7 @@ module Mp4.Parser {
 
 
   export class MetaBoxParser extends FullBoxParser {
-    static type = 'meta';
+    static TYPE = 'meta';
 
     parse(): IMetaBox {
       var ret = <IMetaBox>super.parse();
@@ -939,11 +939,11 @@ module Mp4.Parser {
       while (!this.eof()) {
         var box = this.readBox();
         switch (box.type) {
-          case PrimaryItemBoxParser.type: ret.primaryResource = <IPrimaryItemBox>box; break;
-          case DataInformationBoxParser.type: ret.fileLocations = <IDataInformationBox>box; break;
-          case ItemLocationBoxParser.type: ret.itemLocations = <IItemLocationBox>box; break;
-          case ItemInfoBoxParser.type: ret.itemInfos = <IItemInfoBox>box; break;
-          case ItemProtectionBoxParser.type: ret.protections = <IItemProtectionBox>box; break;
+          case PrimaryItemBoxParser.TYPE: ret.primaryResource = <IPrimaryItemBox>box; break;
+          case DataInformationBoxParser.TYPE: ret.fileLocations = <IDataInformationBox>box; break;
+          case ItemLocationBoxParser.TYPE: ret.itemLocations = <IItemLocationBox>box; break;
+          case ItemInfoBoxParser.TYPE: ret.itemInfos = <IItemInfoBox>box; break;
+          case ItemProtectionBoxParser.TYPE: ret.protections = <IItemProtectionBox>box; break;
           case 'ipmc': ret.IPMPControl = <IIPMPControlBox>box; break;
           default: ret.otherBoxes.push(box);
         }
@@ -954,7 +954,7 @@ module Mp4.Parser {
 
 
   export class XMLBoxParsr extends FullBoxParser {
-    static type = 'xml ';
+    static TYPE = 'xml ';
 
     parse(): IXMLBox {
       var ret = <IXMLBox>super.parse();
@@ -966,7 +966,7 @@ module Mp4.Parser {
 
 
   export class BinaryXMLBoxParser extends FullBoxParser {
-    static type = 'bxml';
+    static TYPE = 'bxml';
 
     parse(): IBinaryXMLBox {
       var ret = <IBinaryXMLBox>super.parse();
@@ -977,7 +977,7 @@ module Mp4.Parser {
 
 
   export class ItemLocationBoxParser extends FullBoxParser {
-    static type = 'iloc';
+    static TYPE = 'iloc';
 
     parse(): IItemLocationBox {
       var ret = <IItemLocationBox>super.parse();
@@ -1013,7 +1013,7 @@ module Mp4.Parser {
 
 
   export class PrimaryItemBoxParser extends FullBoxParser {
-    static type = 'pitm';
+    static TYPE = 'pitm';
 
     parse(): IPrimaryItemBox {
       var ret = <IPrimaryItemBox>super.parse();
@@ -1024,7 +1024,7 @@ module Mp4.Parser {
 
 
   export class ItemProtectionBoxParser extends FullBoxParser {
-    static type = 'ipro';
+    static TYPE = 'ipro';
 
     parse(): IItemProtectionBox {
       var ret = <IItemProtectionBox>super.parse();
@@ -1039,7 +1039,7 @@ module Mp4.Parser {
 
 
   export class ItemInfoEntryParser extends FullBoxParser {
-    static type = 'infe';
+    static TYPE = 'infe';
 
     parse(): IItemInfoEntry {
       var ret = <IItemInfoEntry>super.parse();
@@ -1054,7 +1054,7 @@ module Mp4.Parser {
 
 
   export class ItemInfoBoxParser extends FullBoxParser {
-    static type = 'iinf';
+    static TYPE = 'iinf';
 
     parse(): IItemInfoBox {
       var ret = <IItemInfoBox>super.parse();
@@ -1069,7 +1069,7 @@ module Mp4.Parser {
 
 
   export class ProtectionSchemeInfoBoxParser extends BoxParser {
-    static type = 'sinf';
+    static TYPE = 'sinf';
 
     parse(): IProtectionSchemeInfoBox {
       var ret = <IProtectionSchemeInfoBox>super.parse();
@@ -1077,7 +1077,7 @@ module Mp4.Parser {
       while (!this.eof()) {
         var box = this.readBox();
         switch (box.type) {
-          case IPMPInfoBoxParser.type: ret.IPMPDescriptors = <IIPMPInfoBox>this.readBox(); break;
+          case IPMPInfoBoxParser.TYPE: ret.IPMPDescriptors = <IIPMPInfoBox>this.readBox(); break;
         }
       }
       return ret;
@@ -1086,7 +1086,7 @@ module Mp4.Parser {
 
 
   export class OriginalFormatBoxParser extends BoxParser {
-    static type = 'frma';
+    static TYPE = 'frma';
 
     parse(): IOriginalFormatBox {
       var ret = <IOriginalFormatBox>super.parse();
@@ -1097,7 +1097,7 @@ module Mp4.Parser {
 
 
   export class IPMPInfoBoxParser extends FullBoxParser {
-    static type = 'imif';
+    static TYPE = 'imif';
 
     parse(): IIPMPInfoBox {
       var ret = <IIPMPInfoBox>super.parse();
@@ -1116,7 +1116,7 @@ module Mp4.Parser {
   export var createBoxParser = (bytes: Uint8Array, type: string): BoxParser => {
     var _Parser;
     Object.keys(Parser).some(key => {
-      if (Parser[key].type === type) {
+      if (Parser[key].TYPE === type) {
         _Parser = Parser[key];
         return true;
       }

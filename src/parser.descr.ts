@@ -27,7 +27,7 @@ module Mp4.Parser {
   }
 
   export class DescriptorParser extends DescriptorParserMixin {
-    static tag: number;
+    static TAG: number;
     tag: number;
 
     parse(): IDescriptor {
@@ -40,12 +40,12 @@ module Mp4.Parser {
 
 
   export class DecoderSpecificInfoParser extends DescriptorParser {
-    static tag = 0x05;
+    static TAG = 0x05;
   }
 
 
   export class ProfileLevelINdicationIndexDescriptor extends DescriptorParser {
-    static tag = 0x14;
+    static TAG = 0x14;
 
     parse(): IProfileLevelIndicationIndexDescriptor {
       var ret = <IProfileLevelIndicationIndexDescriptor>super.parse();
@@ -56,7 +56,11 @@ module Mp4.Parser {
 
 
   export class DecoderConfigDescriptorParser extends DescriptorParser {
-    static tag = 0x04;
+    static TAG = 0x04;
+    static OBJECT_TYPE_INDICATION = {
+      MP3: 0x6B,
+      AAC: 0x40
+    };
 
     parse(): IDecoderConfigDescriptor {
       var ret = <IDecoderConfigDescriptor>super.parse();
@@ -91,7 +95,7 @@ module Mp4.Parser {
 
 
   export class SLConfigDescriptorParser extends DescriptorParser {
-    static tag = 0x06;
+    static TAG = 0x06;
 
     parse(): ISLConfigDescriptor {
       var ret = <ISLConfigDescriptor>super.parse();
@@ -151,7 +155,7 @@ module Mp4.Parser {
 
 
   export class ESDescriptorParser extends DescriptorParser {
-    static tag = 0x03;
+    static TAG = 0x03;
 
     parse(): IESDescriptor {
       var ret = <IESDescriptor>super.parse();
@@ -212,7 +216,7 @@ module Mp4.Parser {
     var _Parser;
     Object.keys(Parser).some(key => {
       var __Parser = Parser[key];
-      if (__Parser.tag === tag || Array.isArray(__Parser) && __Parser.some(tag => __Parser.tag === tag)) {
+      if (__Parser.TAG === tag || Array.isArray(__Parser) && __Parser.some(tag => __Parser.TAG === tag)) {
         _Parser = __Parser;
         return true;
       }

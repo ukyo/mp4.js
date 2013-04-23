@@ -162,9 +162,13 @@ module Mp4 {
     esBox: IESDBox;
   }
 
-  export interface IMP4VisualSampleEntry extends IVisualSampleEntry, IMpegSampleEntry {}
+  export interface IMP4VisualSampleEntry extends IVisualSampleEntry {
+    esBox: IESDBox;
+  }
 
-  export interface IMP4AudioSampleEntry extends IAudioSampleEntry, IMpegSampleEntry {}
+  export interface IMP4AudioSampleEntry extends IAudioSampleEntry {
+    esBox: IESDBox;
+  }
   
   export interface ISampleDescriptionBox extends IFullBox, IBoxList {
     entryCount: number; // unsigned int(32)

@@ -69,7 +69,8 @@ module Mp4 {
     return ret;
   }
 
-  export var extractAudioAsM4A = (bytes: Uint8Array): Uint8Array => {
+  // extract audio. it is stored to MP4 container.
+  export var extractAudio = (bytes: Uint8Array): Uint8Array => {
     var tree = parse(bytes);
     var finder = new Finder(tree);
     var offset = 8 * 6;
@@ -122,7 +123,7 @@ module Mp4 {
     var mdatBytes = new Composer.MediaDataBoxComposer({
       data: concatBytes(chunks)
     }).compose();
-    
+
     var stblBytes = new Composer.SampleTableBoxComposer([stsdBytes, sttsBytes, stscBytes, stszBytes, stcoBytes]).compose();
     var minfBytes = new Composer.MediaInformationBoxComposer([smhdBytes, dinfBytes, stblBytes]).compose();
     var mdiaBytes = new Composer.MediaBoxComposer([mdhdBytes, hdlrBytes, minfBytes]).compose();
@@ -132,8 +133,8 @@ module Mp4 {
     return concatBytes([ftypBytes, moovBytes, mdatBytes]);
   };
 
-  export var extractAudioAsAAC = (bytes: Uint8Array): Uint8Array => {
-    var finder = new Finder(getAudioTrack(parse(bytes)));
+  var extractAudioAsAAC = (bytes: Uint8Array, audioTrack: any): Uint8Array => {
+    var finder = new Finder(audioTrack);
 
     var mp4a = <IMP4AudioSampleEntry>finder.findOne('mp4a');
     var stsc = <ISampleToChunkBox>finder.findOne('stsc');
@@ -146,7 +147,7 @@ module Mp4 {
     var aacHeader = new Uint8Array(7);
     aacHeader[0] = 0xFF;
     aacHeader[1] = 0xF9;
-    aacHeader[2] = 0x40 | (SAMPLERATE_TABLE.indexOf(mp4a.samplerate) <<2) | (mp4a.channelcount >> 2);
+    aacHeader[2] = 0x40 | (SAMPLERATE_TABLE.indexOf(mp4a.samplerate) << 2) | (mp4a.channelcount >> 2);
     aacHeader[6] = 0xFC;
 
     var i, j, k, idx, n, m, l, chunkOffset, sampleSize;
@@ -170,6 +171,22 @@ module Mp4 {
     }
 
     return ret;
-
   };
+
+  var extractAudioAsMP3 = (bytes: Uint8Array, audioTrack: any): Uint8Array => {
+    return concatBytes(getChunks(bytes, audioTrack));
+  };
+
+  export var extractRawAudio = (bytes: Uint8Array): { type: string; data: Uint8Array; } => {
+    var tree = parse(bytes);
+    var audioTrack = getAudioTrack(tree);
+    var finder = new Finder(audioTrack);
+    var mp4a = <IMP4AudioSampleEntry>finder.findOne('mp4a');
+    var OBJECT_TYPE_INDICATION = Parser.DecoderConfigDescriptorParser.OBJECT_TYPE_INDICATION;
+    switch (mp4a.esBox.esDescr.decConfigDescr.objectTypeIndication) {
+      case OBJECT_TYPE_INDICATION.AAC: return { type: 'aac', data: extractAudioAsAAC(bytes, audioTrack) };
+      case OBJECT_TYPE_INDICATION.MP3: return { type: 'mp3', data: extractAudioAsMP3(bytes, audioTrack) };
+      default: throw new TypeError('not supported object type indication.');
+    }
+  }
 }

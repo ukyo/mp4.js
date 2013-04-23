@@ -60,7 +60,7 @@ var Mp4;
         }
         return ret;
     };
-    Mp4.extractAudioAsM4A = function (bytes) {
+    Mp4.extractAudio = function (bytes) {
         var tree = Mp4.parse(bytes);
         var finder = new Mp4.Finder(tree);
         var offset = 8 * 6;
@@ -143,8 +143,8 @@ var Mp4;
             mdatBytes
         ]);
     };
-    Mp4.extractAudioAsAAC = function (bytes) {
-        var finder = new Mp4.Finder(getAudioTrack(Mp4.parse(bytes)));
+    var extractAudioAsAAC = function (bytes, audioTrack) {
+        var finder = new Mp4.Finder(audioTrack);
         var mp4a = finder.findOne('mp4a');
         var stsc = finder.findOne('stsc');
         var stsz = finder.findOne('stsz');
@@ -177,6 +177,30 @@ var Mp4;
             }
         }
         return ret;
+    };
+    var extractAudioAsMP3 = function (bytes, audioTrack) {
+        return concatBytes(getChunks(bytes, audioTrack));
+    };
+    Mp4.extractRawAudio = function (bytes) {
+        var tree = Mp4.parse(bytes);
+        var audioTrack = getAudioTrack(tree);
+        var finder = new Mp4.Finder(audioTrack);
+        var mp4a = finder.findOne('mp4a');
+        var OBJECT_TYPE_INDICATION = Mp4.Parser.DecoderConfigDescriptorParser.OBJECT_TYPE_INDICATION;
+        switch(mp4a.esBox.esDescr.decConfigDescr.objectTypeIndication) {
+            case OBJECT_TYPE_INDICATION.AAC:
+                return {
+                    type: 'aac',
+                    data: extractAudioAsAAC(bytes, audioTrack)
+                };
+            case OBJECT_TYPE_INDICATION.MP3:
+                return {
+                    type: 'mp3',
+                    data: extractAudioAsMP3(bytes, audioTrack)
+                };
+            default:
+                throw new TypeError('not supported object type indication.');
+        }
     };
 })(Mp4 || (Mp4 = {}));
 //@ sourceMappingURL=mp4.js.map

@@ -6,8 +6,9 @@ module.exports = function (grunt) {
       mp4: {
         src: [
           'src/dataview.ts',
-          'src/interface.box.ts',
-          'src/interface.descr.ts',
+          'src/bitreader.ts',
+          'src/bitwriter.ts',
+          'src/statics.ts',
           'src/parser.ts',
           'src/parser.descr.ts',
           'src/parser.box.ts',
@@ -41,10 +42,11 @@ module.exports = function (grunt) {
     uglify: {
       scripts: {
         files: {
-          'dest/mp4.min.js': [
+          'dist/mp4.min.js': [
             'src/dataview.js',
-            'src/interface.box.js',
-            'src/interface.descr.js',
+            'src/bitreader.js',
+            'src/bitwriter.js',
+            'src/statics.js',
             'src/parser.js',
             'src/parser.descr.js',
             'src/parser.box.js',

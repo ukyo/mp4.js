@@ -6,6 +6,9 @@
   ],
   "src_files": [
     "src/dataview.js",
+    "src/bitreader.js",
+    "src/bitwriter.js",
+    "src/statics.js",
     "src/parser.js",
     "src/parser.descr.js",
     "src/parser.box.js",

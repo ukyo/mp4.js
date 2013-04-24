@@ -2,11 +2,7 @@
 
 module Mp4.Composer {
 
-  export interface IBox {}
-
   export class BoxComposer extends BaseComposer {
-    static TYPE: string;
-
     constructor() {
       super();
       this.skipBytes(4);
@@ -18,14 +14,21 @@ module Mp4.Composer {
       this.view.setUint32(0, this.byteOffset);
       return super.compose();
     }
+
+    writeBox(box) {
+      var bytes: Uint8Array;
+      if (box instanceof Uint8Array) {
+        bytes = box;
+      } else if (box.bytes) {
+        bytes = box.bytes;
+      } else {
+        bytes = createBoxComposer(box).compose();
+      }
+      this.writeBytes(bytes);
+    }
   }
 
 
-  export interface IFullBox extends IBox {
-    version: number;
-    flags: number;
-  }
-  
   export class FullBoxComposer extends BoxComposer {
     constructor(public box: IFullBox) {
       super();
@@ -36,9 +39,9 @@ module Mp4.Composer {
 
 
   export class BoxListComposer extends BoxComposer {
-    constructor(boxes: Uint8Array[]) {
+    constructor(boxes: any[]) {
       super();
-      boxes.forEach(box => this.writeBytes(box));
+      boxes.forEach(box => this.writeBox(box));
     }
   }
 
@@ -155,7 +158,7 @@ module Mp4.Composer {
       this.writeUint32(box.timescale);
       this.writeUint32(box.duration);
       this.skipBits(1);
-      [].forEach.call(box.language, (c, i) => this.writeBits(box.language.charCodeAt(i), 5));
+      [].forEach.call(box.language, (c, i) => this.writeBits(box.language.charCodeAt(i) - 0x60, 5));
       this.skipBytes(2);
     }
   }
@@ -251,10 +254,7 @@ module Mp4.Composer {
     constructor(box: IDataReferenceBox) {
       super(box);
       this.writeUint32(box.entryCount);
-      box.entries.forEach(entry => {
-        var composer = createBoxComposer(entry);
-        this.writeBytes(composer.compose());
-      });
+      box.entries.forEach(entry => this.writeBox(box));
     }
   }
 
@@ -333,7 +333,8 @@ module Mp4.Composer {
 
     constructor(box: IMP4VisualSampleEntry) {
       super(box);
-      this.writeBytes(createBoxComposer(box.esBox).compose());
+      box.esBox.type = 'esds';
+      this.writeBox(box.esBox);
     }
   }
 
@@ -356,7 +357,8 @@ module Mp4.Composer {
 
     constructor(box: IMP4AudioSampleEntry) {
       super(box);
-      this.writeBytes(createBoxComposer(box.esBox).compose());
+      box.esBox.type = 'esds';
+      this.writeBox(box.esBox);
     }
   }
 
@@ -367,10 +369,7 @@ module Mp4.Composer {
     constructor(box: ISampleDescriptionBox) {
       super(box);
       this.writeUint32(box.entryCount);
-      box.boxes.forEach(box => {
-        var composer = createBoxComposer(box);
-        this.writeBytes(composer.compose());
-      });
+      box.boxes.forEach(b => this.writeBox(b));
     }
   }
 

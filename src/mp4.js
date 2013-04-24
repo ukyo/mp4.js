@@ -20,9 +20,9 @@ var Mp4;
     var getChunks = function (bytes, trackBox) {
         var chunks = [];
         var finder = new Mp4.Finder(trackBox);
-        var stsc = finder.findOne('stsc');
-        var stsz = finder.findOne('stsz');
-        var stco = finder.findOne('stco');
+        var stsc = finder.findOne(Mp4.BOX_TYPE.SampleToChunkBox);
+        var stsz = finder.findOne(Mp4.BOX_TYPE.SampleSizeBox);
+        var stco = finder.findOne(Mp4.BOX_TYPE.ChunkOffsetBox);
         var i, j, k, idx, n, m, l, chunkStart, chunkEnd;
         for(i = 0 , idx = 0 , n = stsc.entryCount; i < n; ++i) {
             j = stsc.entries[i].firstChunk - 1;
@@ -40,8 +40,8 @@ var Mp4;
     var getAudioTrack = function (tree) {
         var audioTrack;
         var finder = new Mp4.Finder(tree);
-        finder.findAll('trak').some(function (box) {
-            var hdlr = new Mp4.Finder(box).findOne('hdlr');
+        finder.findAll(Mp4.BOX_TYPE.TrackBox).some(function (box) {
+            var hdlr = new Mp4.Finder(box).findOne(Mp4.BOX_TYPE.HandlerBox);
             if(hdlr.handlerType === 'soun') {
                 return audioTrack = box;
             }
@@ -64,7 +64,7 @@ var Mp4;
         var tree = Mp4.parse(bytes);
         var finder = new Mp4.Finder(tree);
         var offset = 8 * 6;
-        var ftypBytes = new Mp4.Composer.FileTypeBoxComposer({
+        var ftyp = {
             majorBrand: 'mp4a',
             minorVersion: 0,
             compatibleBrands: [
@@ -73,30 +73,31 @@ var Mp4;
                 'isom', 
                 'ndia'
             ]
-        }).compose();
-        offset += ftypBytes.length;
-        var mvhdBytes = finder.findOne('mvhd').bytes;
-        offset += mvhdBytes.length;
+        };
+        ftyp.bytes = new Mp4.Composer.FileTypeBoxComposer(ftyp).compose();
+        offset += ftyp.bytes.length;
+        var mvhd = finder.findOne(Mp4.BOX_TYPE.MovieHeaderBox);
+        offset += mvhd.bytes.length;
         var audioTrack = getAudioTrack(tree);
         finder = new Mp4.Finder(audioTrack);
-        var tkhdBytes = finder.findOne('tkhd').bytes;
-        offset += tkhdBytes.length;
-        finder = new Mp4.Finder(finder.findOne('mdia'));
-        var mdhdBytes = finder.findOne('mdhd').bytes;
-        var hdlrBytes = finder.findOne('hdlr').bytes;
-        offset += mdhdBytes.length + hdlrBytes.length;
-        finder = new Mp4.Finder(finder.findOne('minf'));
-        var smhdBytes = finder.findOne('smhd').bytes;
-        var dinfBytes = finder.findOne('dinf').bytes;
-        offset += smhdBytes.length + dinfBytes.length;
-        finder = new Mp4.Finder(finder.findOne('stbl'));
-        var stsdBytes = finder.findOne('stsd').bytes;
-        var sttsBytes = finder.findOne('stts').bytes;
-        var stscBytes = finder.findOne('stsc').bytes;
-        var stszBytes = finder.findOne('stsz').bytes;
-        var stco = finder.findOne('stco');
+        var tkhd = finder.findOne(Mp4.BOX_TYPE.TrackHeaderBox);
+        offset += tkhd.bytes.length;
+        finder = new Mp4.Finder(finder.findOne(Mp4.BOX_TYPE.MediaDataBox));
+        var mdhd = finder.findOne(Mp4.BOX_TYPE.MediaHeaderBox);
+        var hdlr = finder.findOne(Mp4.BOX_TYPE.HandlerBox);
+        offset += mdhd.bytes.length + hdlr.bytes.length;
+        finder = new Mp4.Finder(finder.findOne(Mp4.BOX_TYPE.MediaInformationBox));
+        var smhd = finder.findOne(Mp4.BOX_TYPE.SoundMediaHeaderBox);
+        var dinf = finder.findOne(Mp4.BOX_TYPE.DataInformationBox);
+        offset += smhd.bytes.length + dinf.bytes.length;
+        finder = new Mp4.Finder(finder.findOne(Mp4.BOX_TYPE.SampleTableBox));
+        var stsd = finder.findOne(Mp4.BOX_TYPE.SampleDescriptionBox);
+        var stts = finder.findOne(Mp4.BOX_TYPE.TimeToSampleBox);
+        var stsc = finder.findOne(Mp4.BOX_TYPE.SampleToChunkBox);
+        var stsz = finder.findOne(Mp4.BOX_TYPE.SampleSizeBox);
+        var stco = finder.findOne(Mp4.BOX_TYPE.ChunkOffsetBox);
         var stcoBytes = stco.bytes;
-        offset += stsdBytes.length + sttsBytes.length + stscBytes.length + stszBytes.length + stcoBytes.length;
+        offset += stsd.bytes.length + stts.bytes.length + stsc.bytes.length + stsz.bytes.length + stcoBytes.length;
         var chunks = getChunks(bytes, audioTrack);
         var chunkOffsets = [
             offset
@@ -113,42 +114,42 @@ var Mp4;
             data: concatBytes(chunks)
         }).compose();
         var stblBytes = new Mp4.Composer.SampleTableBoxComposer([
-            stsdBytes, 
-            sttsBytes, 
-            stscBytes, 
-            stszBytes, 
+            stsd, 
+            stts, 
+            stsc, 
+            stsz, 
             stcoBytes
         ]).compose();
         var minfBytes = new Mp4.Composer.MediaInformationBoxComposer([
-            smhdBytes, 
-            dinfBytes, 
+            smhd, 
+            dinf, 
             stblBytes
         ]).compose();
         var mdiaBytes = new Mp4.Composer.MediaBoxComposer([
-            mdhdBytes, 
-            hdlrBytes, 
+            mdhd, 
+            hdlr, 
             minfBytes
         ]).compose();
         var trakBytes = new Mp4.Composer.TrackBoxComposer([
-            tkhdBytes, 
+            tkhd, 
             mdiaBytes
         ]).compose();
         var moovBytes = new Mp4.Composer.MovieBoxComposer([
-            mvhdBytes, 
+            mvhd, 
             trakBytes
         ]).compose();
         return concatBytes([
-            ftypBytes, 
+            ftyp.bytes, 
             moovBytes, 
             mdatBytes
         ]);
     };
     var extractAudioAsAAC = function (bytes, audioTrack) {
         var finder = new Mp4.Finder(audioTrack);
-        var mp4a = finder.findOne('mp4a');
-        var stsc = finder.findOne('stsc');
-        var stsz = finder.findOne('stsz');
-        var stco = finder.findOne('stco');
+        var mp4a = finder.findOne(Mp4.BOX_TYPE.MP4AudioSampleEntry);
+        var stsc = finder.findOne(Mp4.BOX_TYPE.SampleToChunkBox);
+        var stsz = finder.findOne(Mp4.BOX_TYPE.SampleSizeBox);
+        var stco = finder.findOne(Mp4.BOX_TYPE.ChunkOffsetBox);
         var ret = new Uint8Array(stsz.sampleSizes.length * 7 + stsz.sampleSizes.reduce(function (a, b) {
             return a + b;
         }));
@@ -185,7 +186,7 @@ var Mp4;
         var tree = Mp4.parse(bytes);
         var audioTrack = getAudioTrack(tree);
         var finder = new Mp4.Finder(audioTrack);
-        var mp4a = finder.findOne('mp4a');
+        var mp4a = finder.findOne(Mp4.BOX_TYPE.MP4AudioSampleEntry);
         var OBJECT_TYPE_INDICATION = Mp4.Parser.DecoderConfigDescriptorParser.OBJECT_TYPE_INDICATION;
         switch(mp4a.esBox.esDescr.decConfigDescr.objectTypeIndication) {
             case OBJECT_TYPE_INDICATION.AAC:

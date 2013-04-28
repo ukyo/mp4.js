@@ -16,9 +16,9 @@ module Mp4.Composer {
 
 
   export class DescriptorComposer extends DescriptorComposerMixin {
-    constructor(descr: IDescriptor) {
+    constructor() {
       super();
-      this.writeUint8(typeof descr.tag !== 'undefined' ? descr.tag : this['constructor'].TAG);
+      this.writeUint8(this['constructor'].TAG);
       this.skipBytes(4);
     }
 
@@ -55,4 +55,5 @@ module Mp4.Composer {
     });
     return new (_Composer || DescriptorComposer)(descr);
   };
+
 }

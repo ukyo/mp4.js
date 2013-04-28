@@ -28,9 +28,9 @@ module Mp4 {
     var chunks: Uint8Array[] = [];
     var finder = new Finder(trackBox);
 
-    var stsc = <ISampleToChunkBox>finder.findOne(BOX_TYPE.SampleToChunkBox);
-    var stsz = <ISampleSizeBox>finder.findOne(BOX_TYPE.SampleSizeBox);
-    var stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE.ChunkOffsetBox);
+    var stsc = <ISampleToChunkBox>finder.findOne(BOX_TYPE_SAMPLE_TO_CHUNK_BOX);
+    var stsz = <ISampleSizeBox>finder.findOne(BOX_TYPE_SAMPLE_SIZE_BOX);
+    var stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET_BOX);
 
     var i, j, k, idx, n, m, l, chunkStart, chunkEnd;
 
@@ -52,8 +52,8 @@ module Mp4 {
   var getAudioTrack = (tree: any): ITrackBox => {
     var audioTrack: ITrackBox;
     var finder = new Finder(tree);
-    finder.findAll(BOX_TYPE.TrackBox).some(box => {
-      var hdlr = <IHandlerBox>new Finder(box).findOne(BOX_TYPE.HandlerBox);
+    finder.findAll(BOX_TYPE_TRACK_BOX).some(box => {
+      var hdlr = <IHandlerBox>new Finder(box).findOne(BOX_TYPE_HANDLER_BOX);
       if (hdlr.handlerType === 'soun') return audioTrack = <ITrackBox>box;
     });
     return audioTrack;
@@ -87,31 +87,31 @@ module Mp4 {
     ftyp.bytes = new Composer.FileTypeBoxComposer(ftyp).compose();
     offset += ftyp.bytes.length;
 
-    var mvhd = finder.findOne(BOX_TYPE.MovieHeaderBox);
+    var mvhd = finder.findOne(BOX_TYPE_MOVIE_HEADER_BOX);
     offset += mvhd.bytes.length;
 
     var audioTrack = getAudioTrack(tree);
 
     finder = new Finder(audioTrack);
-    var tkhd = finder.findOne(BOX_TYPE.TrackHeaderBox);
+    var tkhd = finder.findOne(BOX_TYPE_TRACK_HEADER_BOX);
     offset += tkhd.bytes.length;
 
-    finder = new Finder(finder.findOne(BOX_TYPE.MediaDataBox));
-    var mdhd = finder.findOne(BOX_TYPE.MediaHeaderBox);
-    var hdlr = finder.findOne(BOX_TYPE.HandlerBox);
+    finder = new Finder(finder.findOne(BOX_TYPE_MEDIA_DATA_BOX));
+    var mdhd = finder.findOne(BOX_TYPE_MEDIA_HEADER_BOX);
+    var hdlr = finder.findOne(BOX_TYPE_HANDLER_BOX);
     offset += mdhd.bytes.length + hdlr.bytes.length;
 
-    finder = new Finder(finder.findOne(BOX_TYPE.MediaInformationBox));
-    var smhd = finder.findOne(BOX_TYPE.SoundMediaHeaderBox);
-    var dinf = finder.findOne(BOX_TYPE.DataInformationBox);
+    finder = new Finder(finder.findOne(BOX_TYPE_MEDIA_INFORMATION_BOX));
+    var smhd = finder.findOne(BOX_TYPE_SOUND_MEDIA_HEADER_BOX);
+    var dinf = finder.findOne(BOX_TYPE_DATA_INFORMATION_BOX);
     offset += smhd.bytes.length + dinf.bytes.length;
 
-    finder = new Finder(finder.findOne(BOX_TYPE.SampleTableBox));
-    var stsd = finder.findOne(BOX_TYPE.SampleDescriptionBox);
-    var stts = finder.findOne(BOX_TYPE.TimeToSampleBox);
-    var stsc = finder.findOne(BOX_TYPE.SampleToChunkBox);
-    var stsz = finder.findOne(BOX_TYPE.SampleSizeBox);
-    var stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE.ChunkOffsetBox);
+    finder = new Finder(finder.findOne(BOX_TYPE_SAMPLE_TABLE_BOX));
+    var stsd = finder.findOne(BOX_TYPE_SAMPLE_DESCRIPTION_BOX);
+    var stts = finder.findOne(BOX_TYPE_TIME_TO_SAMPLE_BOX);
+    var stsc = finder.findOne(BOX_TYPE_SAMPLE_TO_CHUNK_BOX);
+    var stsz = finder.findOne(BOX_TYPE_SAMPLE_SIZE_BOX);
+    var stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET_BOX);
     var stcoBytes = stco.bytes;
     offset += stsd.bytes.length + stts.bytes.length + stsc.bytes.length + stsz.bytes.length + stcoBytes.length;
 
@@ -141,10 +141,10 @@ module Mp4 {
   var extractAudioAsAAC = (bytes: Uint8Array, audioTrack: any): Uint8Array => {
     var finder = new Finder(audioTrack);
 
-    var mp4a = <IMP4AudioSampleEntry>finder.findOne(BOX_TYPE.MP4AudioSampleEntry);
-    var stsc = <ISampleToChunkBox>finder.findOne(BOX_TYPE.SampleToChunkBox);
-    var stsz = <ISampleSizeBox>finder.findOne(BOX_TYPE.SampleSizeBox);
-    var stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE.ChunkOffsetBox);
+    var mp4a = <IMP4AudioSampleEntry>finder.findOne(BOX_TYPE_MP4_AUDIO_SAMPLE_ENTRY);
+    var stsc = <ISampleToChunkBox>finder.findOne(BOX_TYPE_SAMPLE_TO_CHUNK_BOX);
+    var stsz = <ISampleSizeBox>finder.findOne(BOX_TYPE_SAMPLE_SIZE_BOX);
+    var stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET_BOX);
 
     var ret = new Uint8Array(stsz.sampleSizes.length * 7 + stsz.sampleSizes.reduce((a, b) => a + b));
     var offset = 0;
@@ -186,7 +186,7 @@ module Mp4 {
     var tree = parse(bytes);
     var audioTrack = getAudioTrack(tree);
     var finder = new Finder(audioTrack);
-    var mp4a = <IMP4AudioSampleEntry>finder.findOne(BOX_TYPE.MP4AudioSampleEntry);
+    var mp4a = <IMP4AudioSampleEntry>finder.findOne(BOX_TYPE_MP4_AUDIO_SAMPLE_ENTRY);
     var OBJECT_TYPE_INDICATION = Parser.DecoderConfigDescriptorParser.OBJECT_TYPE_INDICATION;
     switch (mp4a.esBox.esDescr.decConfigDescr.objectTypeIndication) {
       case OBJECT_TYPE_INDICATION.AAC: return { type: 'aac', data: extractAudioAsAAC(bytes, audioTrack) };

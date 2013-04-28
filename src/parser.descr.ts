@@ -29,7 +29,6 @@ module Mp4.Parser {
   }
 
   export class DescriptorParser extends DescriptorParserMixin {
-    static TAG: number;
     tag: number;
 
     parse(): IDescriptor {
@@ -42,12 +41,18 @@ module Mp4.Parser {
 
 
   export class DecoderSpecificInfoParser extends DescriptorParser {
-    static TAG = 0x05;
+    static TAG = DESCR_TAG_DECODER_SPECIFIC_INFO;
+
+    parse(): IDecoderSpecificInfo {
+      var ret = <IDecoderSpecificInfo>super.parse();
+      ret.data = this.bytes.subarray(this.byteOffset);
+      return ret;
+    }
   }
 
 
   export class ProfileLevelINdicationIndexDescriptor extends DescriptorParser {
-    static TAG = 0x14;
+    static TAG = DESCR_TAG_PROFILE_LEVEL_INDICATION_INDEX_DESCRIPTOR;
 
     parse(): IProfileLevelIndicationIndexDescriptor {
       var ret = <IProfileLevelIndicationIndexDescriptor>super.parse();
@@ -58,7 +63,7 @@ module Mp4.Parser {
 
 
   export class DecoderConfigDescriptorParser extends DescriptorParser {
-    static TAG = 0x04;
+    static TAG = DESCR_TAG_DECODER_CONFIG_DESCRIPTOR;
     static OBJECT_TYPE_INDICATION = {
       MP3: 0x6B,
       AAC: 0x40
@@ -97,7 +102,7 @@ module Mp4.Parser {
 
 
   export class SLConfigDescriptorParser extends DescriptorParser {
-    static TAG = 0x06;
+    static TAG = DESCR_TAG_SL_CONFIG_DESCRIPTOR;
 
     parse(): ISLConfigDescriptor {
       var ret = <ISLConfigDescriptor>super.parse();
@@ -161,15 +166,12 @@ module Mp4.Parser {
 
     parse(): IESDescriptor {
       var ret = <IESDescriptor>super.parse();
-      var info: IDescriptor;
-      var descrParser: DescriptorParser;
       var descr: IDescriptor;
-      var tmp: number;
 
       ret.esID = this.readUint16();
       ret.streamDependenceFlag = this.readBits(1);
       ret.urlFlag = this.readBits(1);
-      this.skipBits(1);
+      ret.ocrStreamFlag = this.readBits(1);
       ret.streamPriority = this.readBits(5);
 
       if (ret.streamDependenceFlag) {
@@ -181,34 +183,51 @@ module Mp4.Parser {
         ret.urlString = this.readString(ret.urlLength);
       }
 
-      ret.ipIDSs = [];
-      ret.ipmpDescrPtrs = [];
-      ret.langDescrs = [];
-      ret.extDescrs = [];
+      if (ret.ocrStreamFlag) {
+        ret.ocrEsID = this.readUint16();
+      }
 
       while (!this.eof()) {
-        info = getDescriptorInfo(this.bytes.subarray(this.byteOffset));
-        descrParser = createDescriptorParser(this.readBytes(info.byteLength), info.tag);
-        descr = descrParser.parse();
-        if (descrParser instanceof DecoderConfigDescriptorParser) {
-          ret.decConfigDescr = <IDecoderConfigDescriptor>descr;
-        } else if (descrParser instanceof SLConfigDescriptorParser) {
-          ret.slConfigDescr = <ISLConfigDescriptor>descr;
-        } else if (descrParser instanceof IPIDescriptorPointerParser) {
-          ret.ipiPtr = <IIPIDescPointer>descr;
-        } else if (descrParser instanceof IPIdentificationDataSetParser) {
-          ret.ipIDSs.push(<IIPIdentificationDataSet>descr);
-        } else if (descrParser instanceof LanguageDescriptorParser) {
-          ret.langDescrs.push(<ILanguageDescriptor>descr);
-        } else if (descrParser instanceof QosDescriptorParser) {
-          ret.qosDescr = <IQoSDescriptor>descr;
-        } else if (descrParser instanceof ExtensionDescriptorParser) {
-          ret.extDescrs.push(<IExtensionDescriptor>descr);
-        } else {
-          throw new TypeError();
+        descr = this.readDescriptor();
+        switch (descr.tag) {
+          case DESCR_TAG_DECODER_CONFIG_DESCRIPTOR:
+            ret.decConfigDescr = <IDecoderConfigDescriptor>descr;
+            break;
+          case DESCR_TAG_SL_CONFIG_DESCRIPTOR:
+            ret.slConfigDescr = <ISLConfigDescriptor>descr;
+            break;
         }
       }
 
+      return ret;
+    }
+  }
+
+
+  export class InitialObjectDescriptorParser extends DescriptorParser {
+    static TAG = [0x02, 0x10];
+
+    parse(): IInitialObjectDescriptor {
+      var ret = <IInitialObjectDescriptor>super.parse();
+      ret.objectDescrID = this.readBits(10);
+      ret.urlFlag = this.readBits(1);
+      ret.includeInlineProfileLevelFlag = this.readBits(1);
+      this.skipBits(4);
+      if (ret.urlFlag) {
+        ret.urlLength = this.readUint8();
+        ret.urlString = this.readString(ret.urlLength);
+      } else {
+        ret.odProfileLevelIndication = this.readUint8();
+        ret.sceneProfileLevelIndication = this.readUint8();
+        ret.audioProfileLevelIndication = this.readUint8();
+        ret.visualProfileLevelIndication = this.readUint8();
+        ret.graphicsProfileLevelIndication = this.readUint8();
+        // TODO
+      }
+      ret.extDescrs = [];
+      if (ret.urlFlag) while (!this.eof()) {
+        ret.extDescrs.push(<IExtensionDescriptor>this.readDescriptor());
+      }
       return ret;
     }
   }

@@ -12,10 +12,12 @@ module Mp4 {
     esID: number; // bit(16)
     streamDependenceFlag: number; // bit(1)
     urlFlag: number; // bit(1)
+    ocrStreamFlag: number; // bit(1)
     streamPriority: number; // bit(5)
     dependsOnEsID?: number; // bit(16)
     urlLength?: number; // bit(8)
     urlString?: string;
+    ocrEsID?: number; // bit(16)
     decConfigDescr: IDecoderConfigDescriptor;
     slConfigDescr: ISLConfigDescriptor;
     ipiPtr?: IIPIDescPointer;
@@ -38,7 +40,7 @@ module Mp4 {
   }
 
   export interface IDecoderSpecificInfo extends IDescriptor {
-
+    data: Uint8Array;
   }
 
   export interface IProfileLevelIndicationIndexDescriptor extends IDescriptor {

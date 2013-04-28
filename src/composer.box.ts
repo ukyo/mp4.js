@@ -2,7 +2,7 @@
 
 module Mp4.Composer {
 
-  export class BoxComposer extends BaseComposer {
+  export class BoxComposer extends DescriptorComposerMixin {
     constructor() {
       super();
       this.skipBytes(4);
@@ -47,7 +47,7 @@ module Mp4.Composer {
 
 
   export class FileTypeBoxComposer extends BoxComposer {
-    static TYPE = 'ftyp';
+    static TYPE = BOX_TYPE_FILE_TYPE_BOX;
 
     constructor(box: IFileTypeBox) {
       super();
@@ -59,12 +59,12 @@ module Mp4.Composer {
 
 
   export class MovieBoxComposer extends BoxListComposer {
-    static TYPE = 'moov';
+    static TYPE = BOX_TYPE_MOVIE_BOX;
   }
 
 
   export class MediaDataBoxComposer extends BoxComposer {
-    static TYPE = 'mdat';
+    static TYPE = BOX_TYPE_MEDIA_DATA_BOX;
 
     constructor(box: IMediaDataBox) {
       super();
@@ -74,7 +74,7 @@ module Mp4.Composer {
 
 
   export class MovieHeaderBoxComposer extends FullBoxComposer {
-    static TYPE = 'mvhd';
+    static TYPE = BOX_TYPE_MOVIE_HEADER_BOX;
 
     constructor(box: IMovieHeaderBox) {
       super(box);
@@ -94,12 +94,12 @@ module Mp4.Composer {
 
 
   export class TrackBoxComposer extends BoxListComposer {
-    static TYPE = 'trak';
+    static TYPE = BOX_TYPE_TRACK_BOX;
   }
 
 
   export class TrackHeaderBoxComposer extends FullBoxComposer {
-    static TYPE = 'tkhd';
+    static TYPE = BOX_TYPE_TRACK_HEADER_BOX;
 
     constructor(box: ITrackHeaderBox) {
       super(box);
@@ -121,7 +121,7 @@ module Mp4.Composer {
 
 
   export class TrackReferenceBoxComposer extends BoxListComposer {
-    static TYPE = 'tref';
+    static TYPE = BOX_TYPE_TRACK_REFERENCE_BOX;
   }
 
 
@@ -134,22 +134,22 @@ module Mp4.Composer {
 
 
   export class HintTrackReferenceTypeBoxComposer extends TrackReferenceTypeBoxComposer {
-    static TYPE = 'hint';
+    static TYPE = BOX_TYPE_HINT_TRACK_REFERENCE_TYPE_BOX;
   }
 
 
-  export class DescriptionTrackReferenceTypeBoxComposer extends TrackReferenceTypeBoxComposer {
-    static TYPE = 'cdsc';
+  export class DescribeTrackReferenceTypeBoxComposer extends TrackReferenceTypeBoxComposer {
+    static TYPE = BOX_TYPE_DISCRIBE_TRACK_REFERENCE_TYPE_BOX;
   }
 
 
   export class MediaBoxComposer extends BoxListComposer {
-    static TYPE = 'mdia';
+    static TYPE = BOX_TYPE_MEDIA_BOX;
   }
 
 
   export class MediaHeaderBoxComposer extends FullBoxComposer {
-    static TYPE = 'mdhd';
+    static TYPE = BOX_TYPE_MEDIA_HEADER_BOX;
 
     constructor(box: IMediaHeaderBox) {
       super(box);
@@ -165,7 +165,7 @@ module Mp4.Composer {
 
 
   export class HandlerBoxComposer extends FullBoxComposer {
-    static TYPE = 'hdlr';
+    static TYPE = BOX_TYPE_HANDLER_BOX;
 
     constructor(box: IHandlerBox) {
       super(box);
@@ -178,12 +178,12 @@ module Mp4.Composer {
 
 
   export class MediaInformationBoxComposer extends BoxListComposer {
-    static TYPE = 'minf';
+    static TYPE = BOX_TYPE_MEDIA_INFORMATION_BOX;
   }
 
 
   export class VideoMediaHeaderBoxComposer extends FullBoxComposer {
-    static TYPE = 'vmhd';
+    static TYPE = BOX_TYPE_VIDEO_MEDIA_HEADER_BOX;
 
     constructor(box: IVideoMediaHeaderBox) {
       super(box);
@@ -194,7 +194,7 @@ module Mp4.Composer {
 
 
   export class SoundMediaHeaderBoxComposer extends FullBoxComposer {
-    static TYPE = 'smhd';
+    static TYPE = BOX_TYPE_SOUND_MEDIA_HEADER_BOX;
 
     constructor(box: ISoundMediaHeaderBox) {
       super(box);
@@ -204,8 +204,8 @@ module Mp4.Composer {
   }
 
 
-  export class HindMediaHeaderBoxComposer extends FullBoxComposer {
-    static TYPE = 'hmhd';
+  export class HintMediaHeaderBoxComposer extends FullBoxComposer {
+    static TYPE = BOX_TYPE_HINT_MEDIA_HEADER_BOX;
 
     constructor(box: IHintMediaHeaderBox) {
       super(box);
@@ -219,17 +219,17 @@ module Mp4.Composer {
 
 
   export class NullMediaHeaderBoxComposer extends FullBoxComposer {
-    static TYPE = 'nmhd';
+    static TYPE = BOX_TYPE_NULL_MEDIA_HEADER_BOX;
   }
 
 
   export class DataInformationBoxComposer extends BoxListComposer {
-    static TYPE = 'dinf';
+    static TYPE = BOX_TYPE_DATA_INFORMATION_BOX;
   }
 
 
   export class DataEntryUrlBoxComposer extends FullBoxComposer {
-    static TYPE = 'url ';
+    static TYPE = BOX_TYPE_DATA_ENTRY_URL_BOX;
 
     constructor(box: IDataEntryUrlBox) {
       super(box);
@@ -239,7 +239,7 @@ module Mp4.Composer {
 
 
   export class DataEntryUrnBoxComposer extends FullBoxComposer {
-    static TYPE = 'urn ';
+    static TYPE = BOX_TYPE_DATA_ENTRY_URN_BOX;
 
     constructor(box: IDataEntryUrnBox) {
       super(box);
@@ -249,7 +249,7 @@ module Mp4.Composer {
   }
 
   export class DataReferenceBoxComposer extends FullBoxComposer {
-    static TYPE = 'dref';
+    static TYPE = BOX_TYPE_DATA_REFERENCE_BOX;
 
     constructor(box: IDataReferenceBox) {
       super(box);
@@ -260,12 +260,12 @@ module Mp4.Composer {
 
 
   export class SampleTableBoxComposer extends BoxListComposer {
-    static TYPE = 'stbl';
+    static TYPE = BOX_TYPE_SAMPLE_TABLE_BOX;
   }
 
 
   export class TimeToSampleBoxComposer extends FullBoxComposer {
-    static TYPE = 'stts';
+    static TYPE = BOX_TYPE_TIME_TO_SAMPLE_BOX;
 
     constructor(box: ITimeToSampleBox) {
       super(box);
@@ -279,7 +279,7 @@ module Mp4.Composer {
 
 
   export class CompositionOffsetBoxComposer extends FullBoxComposer {
-    static TYPE = 'ctts';
+    static TYPE = BOX_TYPE_COMPOSITION_OFFSET_BOX;
 
     constructor(box: ICompositionOffsetBox) {
       super(box);
@@ -323,18 +323,29 @@ module Mp4.Composer {
       this.writeUint16(box.frameCount);
       this.writeString(box.compressorname);
       this.writeUint16(box.depth);
-      this.writeUint16(-1);
+      this.writeInt16(-1);
     }
   }
 
 
   export class MP4VisualSampleEntryComposer extends VisualSampleEntryComposer {
-    static TYPE = 'mp4v';
+    static TYPE = BOX_TYPE_MP4_VISUAL_SAMPLE_ENTRY;
 
     constructor(box: IMP4VisualSampleEntry) {
       super(box);
-      box.esBox.type = 'esds';
+      box.esBox.type = BOX_TYPE_ES_DESCRIPTOR_BOX;
       this.writeBox(box.esBox);
+    }
+  }
+
+
+  export class ESDBoxComposer extends FullBoxComposer {
+    static TYPE = BOX_TYPE_ES_DESCRIPTOR_BOX;
+
+    constructor(box: IESDBox) {
+      super(box);
+      box.esDescr.tag = DESCR_TAG_ES_DESCRIPTOR;
+      this.writeDescriptor(box.esDescr);
     }
   }
 
@@ -353,18 +364,18 @@ module Mp4.Composer {
 
 
   export class MP4AudioSampleEntryComposer extends AudioSampleEntryComposer {
-    static TYPE = 'mp4a';
+    static TYPE = BOX_TYPE_MP4_AUDIO_SAMPLE_ENTRY;
 
     constructor(box: IMP4AudioSampleEntry) {
       super(box);
-      box.esBox.type = 'esds';
+      box.esBox.type = BOX_TYPE_ES_DESCRIPTOR_BOX;
       this.writeBox(box.esBox);
     }
   }
 
 
   export class SampleDescriptionBoxComposer extends FullBoxComposer {
-    static TYPE = 'stsd';
+    static TYPE = BOX_TYPE_SAMPLE_DESCRIPTION_BOX;
 
     constructor(box: ISampleDescriptionBox) {
       super(box);
@@ -375,7 +386,7 @@ module Mp4.Composer {
 
 
   export class SampleSizeBoxComposer extends FullBoxComposer {
-    static TYPE = 'stsz';
+    static TYPE = BOX_TYPE_SAMPLE_SIZE_BOX;
 
     constructor(box: ISampleSizeBox) {
       super(box);
@@ -388,7 +399,7 @@ module Mp4.Composer {
 
 
   export class SampleToChunkBoxComposer extends FullBoxComposer {
-    static TYPE = 'stsc';
+    static TYPE = BOX_TYPE_SAMPLE_TO_CHUNK_BOX;
 
     constructor(box: ISampleToChunkBox) {
       super(box);
@@ -403,7 +414,7 @@ module Mp4.Composer {
 
 
   export class ChunkOffsetBoxComposer extends FullBoxComposer {
-    static TYPE = 'stco';
+    static TYPE = BOX_TYPE_CHUNK_OFFSET_BOX;
 
     constructor(box: IChunkOffsetBox) {
       super(box);

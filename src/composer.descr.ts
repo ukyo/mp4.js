@@ -40,8 +40,63 @@ module Mp4.Composer {
   }
 
 
-  export class DecoderConfigDescriptorComposer {
+  export class DecoderConfigDescriptorComposer extends DescriptorComposer {
     static TAG = DESCR_TAG_DECODER_CONFIG_DESCRIPTOR;
+
+    constructor(descr: IDecoderConfigDescriptor) {
+      super();
+      this.writeUint8(descr.objectTypeIndication);
+      this.writeBits(descr.streamType, 6);
+      this.writeBits(descr.upStream, 1);
+      this.skipBits(1);
+      this.writeUint24(descr.bufferSizeDB);
+      this.writeUint32(descr.maxBitrate);
+      this.writeUint32(descr.avgBitrate);
+      descr.decSpecificInfo.tag = DESCR_TAG_DECODER_SPECIFIC_INFO;
+      this.writeDescriptor(descr.decSpecificInfo);
+      descr.profileLevelIndicationIndexDescrs.forEach(d => {
+        d.tag = DESCR_TAG_PROFILE_LEVEL_INDICATION_INDEX_DESCRIPTOR;
+        this.writeDescriptor(d);
+      });
+    }
+  }
+
+
+  export class SLConfigDescriptorComposer extends DescriptorComposer {
+    constructor(descr: ISLConfigDescriptor) {
+      super();
+      this.writeUint8(descr.preDefined);
+      if (descr.preDefined === 0) {
+        this.writeBits(descr.useAccessUnitStartFlag, 1);
+        this.writeBits(descr.useAccessUnitEndFlag, 1);
+        this.writeBits(descr.useRandomAccessPointFlag, 1);
+        this.writeBits(descr.hasRandomAccessUnitsOnlyFlag, 1);
+        this.writeBits(descr.usePaddingFlag, 1);
+        this.writeBits(descr.useTimeStampsFlag, 1);
+        this.writeBits(descr.useTimeStampsFlag, 1);
+        this.writeBits(descr.useIdleFlag, 1);
+        this.writeBits(descr.durationFlag, 1);
+        this.writeUint32(descr.timeStampResolution);
+        this.writeUint32(descr.ocrResolution);
+        this.writeUint8(descr.timeStampLength);
+        this.writeUint8(descr.ocrLength);
+        this.writeUint8(descr.auLength);
+        this.writeUint8(descr.instantBitrateLength);
+        this.writeBits(descr.degradationPriorityLength, 4);
+        this.writeBits(descr.auSeqNumLength, 5);
+        this.writeBits(descr.packetSeqNumLength, 5);
+        this.skipBits(2);
+      }
+      if (descr.durationFlag) {
+        this.writeUint32(descr.timeScale);
+        this.writeUint16(descr.accessUnitDuration);
+        this.writeUint16(descr.compositionUnitDuration)l
+      }
+      if (descr.useTimeStampsFlag === 0) {
+        this.writeBits(descr.startDecodingTimeStamp, descr.timeStampLength);
+        this.writeBits(descr.startCompositionTimeStamp, descr.descr.timeStampLength)
+      }
+    }
   }
 
 

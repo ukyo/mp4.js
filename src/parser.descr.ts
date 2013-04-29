@@ -29,8 +29,6 @@ module Mp4.Parser {
   }
 
   export class DescriptorParser extends DescriptorParserMixin {
-    tag: number;
-
     parse(): IDescriptor {
       var info = getDescriptorInfo(this.bytes);
       this.skipBytes(info.headerLength);
@@ -162,7 +160,7 @@ module Mp4.Parser {
 
 
   export class ESDescriptorParser extends DescriptorParser {
-    static TAG = 0x03;
+    static TAG = DESCR_TAG_ES_DESCRIPTOR;
 
     parse(): IESDescriptor {
       var ret = <IESDescriptor>super.parse();

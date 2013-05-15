@@ -402,10 +402,10 @@ module Mp4.Parser {
     parse(): IAudioSampleEntry {
       var ret = <IAudioSampleEntry>super.parse();
       this.skipBytes(8);
-      ret.channelcount = this.readUint16();
-      ret.samplesize = this.readUint16();
+      ret.channelCount = this.readUint16();
+      ret.sampleSize = this.readUint16();
       this.skipBytes(4);
-      ret.samplerate = this.readUint32() / 0x10000;
+      ret.sampleRate = this.readUint32() / 0x10000;
       return ret;
     }
   }

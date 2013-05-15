@@ -20,6 +20,7 @@ module Mp4 {
         if (tree.buffer) return;
         Object.keys(tree).forEach(key => {
           var prop = tree[key];
+          if (prop == null) return;
           if (Array.isArray(prop)) {
             prop.some(find);
           } else if (prop.type) {
@@ -43,6 +44,7 @@ module Mp4 {
         if (tree.buffer) return;
         Object.keys(tree).forEach(key => {
           var prop = tree[key];
+          if (prop == null) return;
           if (Array.isArray(prop)) {
             prop.forEach(find);
           } else {

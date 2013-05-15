@@ -1,7 +1,7 @@
 module Mp4 {
   
   export interface IDescriptor {
-    tag: number;
+    tag?: number;
     byteLength?: number;
     headerLength?: number;
     bodyLength?: number;
@@ -53,23 +53,23 @@ module Mp4 {
 
   export interface ISLConfigDescriptor extends IDescriptor {
     preDefined: number; // bit(8)
-    useAccessUnitStartFlag: number; // bit(1)
-    useAccessUnitEndFlag: number; // bit(1)
-    useRandomAccessPointFlag: number; // bit(1)
-    hasRandomAccessUnitsOnlyFlag: number; // bit(1)
-    usePaddingFlag: number; // bit(1)
-    useTimeStampsFlag: number; // bit(1)
-    useIdleFlag: number; // bit(1)
-    durationFlag: number; // bit(1)
-    timeStampResolution: number; // bit(32)
-    ocrResolution: number; // bit(32)
-    timeStampLength: number; // bit(8)
-    ocrLength: number; // bit(8)
-    auLength: number; // bit(8)
-    instantBitrateLength: number; // bit(8)
-    degradationPriorityLength: number; // bit(4)
-    auSeqNumLength: number; // bit(5)
-    packetSeqNumLength: number; // bit(5)
+    useAccessUnitStartFlag?: number; // bit(1)
+    useAccessUnitEndFlag?: number; // bit(1)
+    useRandomAccessPointFlag?: number; // bit(1)
+    hasRandomAccessUnitsOnlyFlag?: number; // bit(1)
+    usePaddingFlag?: number; // bit(1)
+    useTimeStampsFlag?: number; // bit(1)
+    useIdleFlag?: number; // bit(1)
+    durationFlag?: number; // bit(1)
+    timeStampResolution?: number; // bit(32)
+    ocrResolution?: number; // bit(32)
+    timeStampLength?: number; // bit(8)
+    ocrLength?: number; // bit(8)
+    auLength?: number; // bit(8)
+    instantBitrateLength?: number; // bit(8)
+    degradationPriorityLength?: number; // bit(4)
+    auSeqNumLength?: number; // bit(5)
+    packetSeqNumLength?: number; // bit(5)
     timeScale?: number; // bit(32)
     accessUnitDuration?: number; // bit(16)
     compositionUnitDuration?: number; // bit(16)

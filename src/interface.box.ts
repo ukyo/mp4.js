@@ -151,9 +151,9 @@ module Mp4 {
   }
 
   export interface IAudioSampleEntry extends ISampleEntry {
-    channelcount: number; // unsigned int(16)
-    samplesize: number; // unsigned int(16)
-    samplerate: number; // unsigned int(32)
+    channelCount: number; // unsigned int(16)
+    sampleSize: number; // unsigned int(16)
+    sampleRate: number; // unsigned int(32)
   }
 
   export interface IESDBox extends IFullBox {

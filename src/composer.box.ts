@@ -82,8 +82,8 @@ module Mp4.Composer {
       this.writeUint32(box.modificationTime);
       this.writeUint32(box.timescale);
       this.writeUint32(box.duration);
-      this.writeInt32(box.rate);
-      this.writeInt16(box.volume);
+      this.writeInt32(box.rate * 0x10000);
+      this.writeInt16(box.volume * 0x100);
       this.skipBytes(2);
       this.skipBytes(8);
       box.matrix.forEach(x => this.writeInt32(x));
@@ -111,11 +111,11 @@ module Mp4.Composer {
       this.skipBytes(4 * 2);
       this.writeInt16(box.layer);
       this.writeInt16(box.alternateGroup);
-      this.writeInt16(box.volume);
+      this.writeInt16(box.volume * 0x100);
       this.skipBytes(2);
       box.matrix.forEach(x => this.writeInt32(x));
-      this.writeUint32(box.width);
-      this.writeUint32(box.height);
+      this.writeUint32(box.width * 0x10000);
+      this.writeUint32(box.height * 0x10000);
     }
   }
 
@@ -171,7 +171,7 @@ module Mp4.Composer {
       super(box);
       this.skipBytes(4);
       this.writeString(box.handlerType);
-      this.skipBytes(4 * 2);
+      this.skipBytes(4 * 3);
       this.writeUTF8StringNullTerminated(box.name);
     }
   }
@@ -254,7 +254,7 @@ module Mp4.Composer {
     constructor(box: IDataReferenceBox) {
       super(box);
       this.writeUint32(box.entryCount);
-      box.entries.forEach(entry => this.writeBox(box));
+      box.entries.forEach(entry => this.writeBox(entry));
     }
   }
 
@@ -354,11 +354,11 @@ module Mp4.Composer {
     constructor(box: IAudioSampleEntry) {
       super(box);
       this.skipBytes(4 * 2);
-      this.writeUint16(box.channelcount);
-      this.writeUint16(box.samplesize);
+      this.writeUint16(box.channelCount);
+      this.writeUint16(box.sampleSize);
       this.skipBytes(2);
       this.skipBytes(2);
-      this.writeUint32(box.samplerate << 16 >>> 0);
+      this.writeUint32(box.sampleRate * 0x10000);
     }
   }
 
@@ -391,6 +391,7 @@ module Mp4.Composer {
     constructor(box: ISampleSizeBox) {
       super(box);
       this.writeUint32(box.sampleSize);
+      this.writeUint32(box.sampleCount);
       if (box.sampleSize === 0) {
         box.sampleSizes.forEach(size => this.writeUint32(size));
       }

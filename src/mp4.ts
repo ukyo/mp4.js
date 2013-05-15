@@ -79,9 +79,9 @@ module Mp4 {
     var offset = 8 * 6;
 
     var ftyp: IFileTypeBox = {
-      majorBrand: 'mp4a',
-      minorVersion: 0,
-      compatibleBrands: ['mp4a', 'mp42', 'isom', 'ndia']
+      majorBrand: 'M4A ',
+      minorVersion: 1,
+      compatibleBrands: ['isom', 'M4A ', 'mp42']
     };
 
     ftyp.bytes = new Composer.FileTypeBoxComposer(ftyp).compose();
@@ -96,7 +96,7 @@ module Mp4 {
     var tkhd = finder.findOne(BOX_TYPE_TRACK_HEADER_BOX);
     offset += tkhd.bytes.length;
 
-    finder = new Finder(finder.findOne(BOX_TYPE_MEDIA_DATA_BOX));
+    finder = new Finder(finder.findOne(BOX_TYPE_MEDIA_BOX));
     var mdhd = finder.findOne(BOX_TYPE_MEDIA_HEADER_BOX);
     var hdlr = finder.findOne(BOX_TYPE_HANDLER_BOX);
     offset += mdhd.bytes.length + hdlr.bytes.length;
@@ -152,7 +152,7 @@ module Mp4 {
     var aacHeader = new Uint8Array(7);
     aacHeader[0] = 0xFF;
     aacHeader[1] = 0xF9;
-    aacHeader[2] = 0x40 | (SAMPLERATE_TABLE.indexOf(mp4a.samplerate) << 2) | (mp4a.channelcount >> 2);
+    aacHeader[2] = 0x40 | (SAMPLERATE_TABLE.indexOf(mp4a.sampleRate) << 2) | (mp4a.channelCount >> 2);
     aacHeader[6] = 0xFC;
 
     var i, j, k, idx, n, m, l, chunkOffset, sampleSize;
@@ -164,7 +164,7 @@ module Mp4 {
         chunkOffset = stco.chunkOffsets[j];
         for (k = 0, l = stsc.entries[i].samplesPerChunk; k < l; ++k, ++idx) {
           sampleSize = stsz.sampleSizes[idx] + 7;
-          aacHeader[3] = (mp4a.channelcount << 6) | (sampleSize >> 11);
+          aacHeader[3] = (mp4a.channelCount << 6) | (sampleSize >> 11);
           aacHeader[4] = sampleSize >> 3;
           aacHeader[5] = (sampleSize << 5) | (0x7FF >> 6);
           ret.set(aacHeader, offset);
@@ -194,4 +194,226 @@ module Mp4 {
       default: throw new TypeError('not supported object type indication.');
     }
   }
+
+  export var aacToM4a = (bytes: Uint8Array): Uint8Array => {
+    var bitReader = new BitReader(bytes);
+    var offset = 8 * 6;
+
+    bitReader.skipBits(12);
+    var aacInfo = {
+      id: bitReader.readBits(1),
+      layer: bitReader.readBits(2),
+      protectionAbsent: bitReader.readBits(1),
+      profile: bitReader.readBits(2),
+      sampleingFrequencyIndex: bitReader.readBits(4),
+      privateBit: bitReader.readBits(1),
+      channelConfiguration: bitReader.readBits(3),
+      original: bitReader.readBits(1),
+      home: bitReader.readBits(1),
+      copyrightIndentificationBit: bitReader.readBits(1),
+      copyrightIndentificationStart: bitReader.readBits(1),
+      aacFrameLength: bitReader.readBits(13),
+      atdsBufferFullness: bitReader.readBits(11),
+      noRawDataBlocksInFrames: bitReader.readBits(2)
+    };
+    bitReader.bitOffset = 0;
+
+    var samples: Uint8Array[] = [];
+    var frameLength: number;
+    var bufferSizeDB = 0;
+    while (!bitReader.eof()) {
+      bitReader.skipBits(30);
+      frameLength = bitReader.readBits(13);
+      bitReader.skipBits(13);
+      samples.push(bitReader.readBytes(frameLength - 7));
+      bufferSizeDB = Math.max(bufferSizeDB, frameLength - 7);
+    }
+
+    var ftypBytes = new Composer.FileTypeBoxComposer({
+      majorBrand: 'M4A ',
+      minorVersion: 1,
+      compatibleBrands: ['isom', 'M4A ', 'mp42']
+    }).compose();
+    offset += ftypBytes.length;
+
+    var creationTime = Date.now();
+    var timescale = 600;
+    var sampleRate = SAMPLERATE_TABLE[aacInfo.sampleingFrequencyIndex];
+    var duration = (samples.length * 1024 * timescale / sampleRate) | 0;
+    var matrix = [0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000];
+
+    var mvhdBytes = new Composer.MovieHeaderBoxComposer({
+      creationTime: creationTime,
+      modificationTime: creationTime,
+      timescale: timescale,
+      duration: duration,
+      rate: 1.0,
+      volume: 1.0,
+      matrix: matrix,
+      nextTrackID: 2
+    }).compose();
+    offset += mvhdBytes.length;
+
+    var tkhdBytes = new Composer.TrackHeaderBoxComposer({
+      flags: 0x000001,
+      creationTime: creationTime,
+      modificationTime: creationTime,
+      trackID: 1,
+      duration: duration,
+      layer: 0,
+      alternateGroup: 0,
+      volume: 1.0,
+      matrix: matrix,
+      width: 0,
+      height: 0
+    }).compose();
+    offset += tkhdBytes.length;
+
+    var mdhdBytes = new Composer.MediaHeaderBoxComposer({
+      creationTime: creationTime,
+      modificationTime: creationTime,
+      timescale: timescale,
+      duration: duration,
+      language: 'und',
+    }).compose();
+    offset += mdhdBytes.length;
+
+    var hdlrBytes = new Composer.HandlerBoxComposer({
+      handlerType: 'soun',
+      name: 'mp4.js sound media handler'
+    }).compose();
+    offset += hdlrBytes.length;
+
+    var smhdBytes = new Composer.SoundMediaHeaderBoxComposer({
+      balance: 0
+    }).compose();
+    offset += smhdBytes.length;
+
+    var urlBytes = new Composer.DataEntryUrlBoxComposer({
+      flags: 0x000001,
+      location: ''
+    }).compose();
+
+    var drefBytes = new Composer.DataReferenceBoxComposer({
+      entryCount: 1,
+      entries: [urlBytes]
+    }).compose();
+
+    var dinfBytes = new Composer.DataInformationBoxComposer([drefBytes]).compose();
+    offset += dinfBytes.length;
+
+    var OBJECT_TYPE_INDICATION = Parser.DecoderConfigDescriptorParser.OBJECT_TYPE_INDICATION;
+    var decConfigDescr: IDecoderConfigDescriptor = {
+      objectTypeIndication: OBJECT_TYPE_INDICATION.AAC,
+      streamType: 0x05,
+      upStream: 0,
+      bufferSizeDB: bufferSizeDB,
+      maxBitrate: 0,
+      avgBitrate: 0,
+      decSpecificInfo: {
+        data: new Uint8Array([0x12, 0x10])
+      }
+    };
+
+    var slConfigDescr: ISLConfigDescriptor = {
+      preDefined: 2
+    };
+
+    var esDescr: IESDescriptor = {
+      esID: 0,
+      streamDependenceFlag: 0,
+      urlFlag: 0,
+      ocrStreamFlag: 0,
+      streamPriority: 0,
+      decConfigDescr: decConfigDescr,
+      slConfigDescr: slConfigDescr
+    };
+
+    var esBox: IESDBox = {
+      esDescr: esDescr
+    };
+
+    var audioSampleEntry: IMP4AudioSampleEntry = {
+      type: BOX_TYPE_MP4_AUDIO_SAMPLE_ENTRY,
+      dataReferenceIndex: 1,
+      channelCount: aacInfo.channelConfiguration,
+      sampleSize: 16,
+      sampleRate: sampleRate,
+      esBox: esBox
+    };
+
+    var mp4aBytes = new Composer.MP4AudioSampleEntryComposer({
+      type: BOX_TYPE_MP4_AUDIO_SAMPLE_ENTRY,
+      dataReferenceIndex: 1,
+      channelCount: aacInfo.channelConfiguration,
+      sampleSize: 16,
+      sampleRate: sampleRate,
+      esBox: esBox
+    }).compose();
+
+    var stsdBytes = new Composer.SampleDescriptionBoxComposer({
+      entryCount: 1,
+      boxes: [audioSampleEntry]
+    }).compose();
+    offset += stsdBytes.length;
+
+    var sttsBytes = new Composer.TimeToSampleBoxComposer({
+      entryCount: 1,
+      entries: [{ sampleCount: samples.length, sampleDelta: 1024 }]
+    }).compose();
+    offset += sttsBytes.length;
+
+    var stszBytes = new Composer.SampleSizeBoxComposer({
+      sampleSize: 0,
+      sampleCount: samples.length,
+      sampleSizes: samples.map(sample => sample.byteLength)
+    }).compose();
+    offset += stszBytes.length;
+
+    var mod16 = samples.length % 16;
+    var stscEntryCount = mod16 ? 2 : 1;
+    var stscEntries = [
+      {
+        firstChunk: 1,
+        samplesPerChunk: 16,
+        sampleDescriptionIndex: 1
+      }
+    ];
+    if (stscEntryCount === 2) {
+      stscEntries.push({
+        firstChunk: Math.floor(samples.length / 16) + 1,
+        samplesPerChunk: mod16,
+        sampleDescriptionIndex: 1
+      });
+    }
+    var stscBytes = new Composer.SampleToChunkBoxComposer({
+      entryCount: stscEntryCount,
+      entries: stscEntries
+    }).compose();
+    offset += stscBytes.length;
+
+    var stcoEntryCount = Math.ceil(samples.length / 16);
+    offset += 4 + stcoEntryCount * 4 + /* header length */12;
+    var chunkOffset = offset;
+    var chunkOffsets = [];
+    for (var i = 0, n = samples.length; i < n; ++i) {
+      if (i % 16 === 0) chunkOffsets.push(chunkOffset);
+      chunkOffset += samples[i].byteLength;
+    }
+    var stcoBytes = new Composer.ChunkOffsetBoxComposer({
+      entryCount: stcoEntryCount,
+      chunkOffsets: chunkOffsets
+    }).compose();
+
+    var stblBytes = new Composer.SampleTableBoxComposer([stsdBytes, sttsBytes, stszBytes, stscBytes, stcoBytes]).compose();
+    var minfBytes = new Composer.MediaInformationBoxComposer([smhdBytes, dinfBytes, stblBytes]).compose();
+    var mdiaBytes = new Composer.MediaBoxComposer([mdhdBytes, hdlrBytes, minfBytes]).compose();
+    var trakBytes = new Composer.TrackBoxComposer([tkhdBytes, mdiaBytes]).compose();
+    var moovBytes = new Composer.MovieBoxComposer([mvhdBytes, trakBytes]).compose();
+    var mdatBytes = new Composer.MediaDataBoxComposer({
+      data: concatBytes(samples)
+    }).compose();
+
+    return concatBytes([ftypBytes, moovBytes, mdatBytes]);
+  };
 }

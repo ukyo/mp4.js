@@ -3,9 +3,11 @@
 module Mp4.Composer {
 
   export class DescriptorComposerMixin extends BaseComposer {
-    writeDescriptor(descr: IDescriptor) {
+    writeDescriptor(descr) {
       var bytes: Uint8Array;
-      if (descr.bytes) {
+      if (descr instanceof Uint8Array) {
+        bytes = descr;
+      } else if (descr.bytes) {
         bytes = descr.bytes;
       } else {
         bytes = createDescriptorComposer(descr).compose();
@@ -19,7 +21,7 @@ module Mp4.Composer {
     constructor() {
       super();
       this.writeUint8(this['constructor'].TAG);
-      this.skipBytes(4);
+      this.writeBytes(new Uint8Array(4));
     }
 
     compose(): Uint8Array {
@@ -48,21 +50,25 @@ module Mp4.Composer {
       this.writeUint8(descr.objectTypeIndication);
       this.writeBits(descr.streamType, 6);
       this.writeBits(descr.upStream, 1);
-      this.skipBits(1);
+      this.writeBits(1, 1);
       this.writeUint24(descr.bufferSizeDB);
       this.writeUint32(descr.maxBitrate);
       this.writeUint32(descr.avgBitrate);
       descr.decSpecificInfo.tag = DESCR_TAG_DECODER_SPECIFIC_INFO;
       this.writeDescriptor(descr.decSpecificInfo);
-      descr.profileLevelIndicationIndexDescrs.forEach(d => {
-        d.tag = DESCR_TAG_PROFILE_LEVEL_INDICATION_INDEX_DESCRIPTOR;
-        this.writeDescriptor(d);
-      });
+      if (descr.profileLevelIndicationIndexDescrs) {
+        descr.profileLevelIndicationIndexDescrs.forEach(d => {
+          d.tag = DESCR_TAG_PROFILE_LEVEL_INDICATION_INDEX_DESCRIPTOR;
+          this.writeDescriptor(d);
+        });
+      }
     }
   }
 
 
   export class SLConfigDescriptorComposer extends DescriptorComposer {
+    static TAG = DESCR_TAG_SL_CONFIG_DESCRIPTOR;
+
     constructor(descr: ISLConfigDescriptor) {
       super();
       this.writeUint8(descr.preDefined);
@@ -85,20 +91,57 @@ module Mp4.Composer {
         this.writeBits(descr.degradationPriorityLength, 4);
         this.writeBits(descr.auSeqNumLength, 5);
         this.writeBits(descr.packetSeqNumLength, 5);
-        this.skipBits(2);
+        this.writeBits(3, 2);
       }
       if (descr.durationFlag) {
         this.writeUint32(descr.timeScale);
         this.writeUint16(descr.accessUnitDuration);
-        this.writeUint16(descr.compositionUnitDuration)l
+        this.writeUint16(descr.compositionUnitDuration);
       }
       if (descr.useTimeStampsFlag === 0) {
         this.writeBits(descr.startDecodingTimeStamp, descr.timeStampLength);
-        this.writeBits(descr.startCompositionTimeStamp, descr.descr.timeStampLength)
+        this.writeBits(descr.startCompositionTimeStamp, descr.timeStampLength);
       }
     }
   }
 
+
+  export class DecoderSpecificInfoComposer extends DescriptorComposer {
+    static TAG = DESCR_TAG_DECODER_SPECIFIC_INFO;
+
+    constructor(descr: IDecoderSpecificInfo) {
+      super();
+      this.writeBytes(descr.data);
+    }
+  }
+
+
+  export class ESDescriptorComposer extends DescriptorComposer {
+    static TAG = DESCR_TAG_ES_DESCRIPTOR;
+
+    constructor(descr: IESDescriptor) {
+      super();
+      this.writeUint16(descr.esID);
+      this.writeBits(descr.streamDependenceFlag || 0, 1);
+      this.writeBits(descr.urlFlag || 0, 1);
+      this.writeBits(descr.ocrStreamFlag || 0, 1);
+      this.writeBits(descr.streamPriority, 5);
+      
+      if (descr.urlFlag) {
+        this.writeUint8(descr.urlLength);
+        this.writeString(descr.urlString);
+      }
+
+      if (descr.ocrStreamFlag) {
+        this.writeUint16(descr.ocrEsID);
+      }
+
+      descr.decConfigDescr.tag = DESCR_TAG_DECODER_CONFIG_DESCRIPTOR;
+      this.writeDescriptor(descr.decConfigDescr);
+      descr.slConfigDescr.tag = DESCR_TAG_SL_CONFIG_DESCRIPTOR;
+      this.writeDescriptor(descr.slConfigDescr);
+    }
+  }
 
   export var createDescriptorComposer = (descr: IDescriptor): DescriptorComposer => {
     var _Composer;

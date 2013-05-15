@@ -1,0 +1,7 @@
+*.m4a
+*.mp3
+src/*.js
+src/*.js.map
+tests/test.js
+tests/test.js.map
+node_modules/

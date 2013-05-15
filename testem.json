@@ -1,0 +1,25 @@
+{
+  "framework": "jasmine",
+  "launch_in_dev": [
+    "chrome",
+    "firefox"
+  ],
+  "src_files": [
+    "src/dataview.js",
+    "src/bitreader.js",
+    "src/bitwriter.js",
+    "src/statics.js",
+    "src/parser.js",
+    "src/parser.descr.js",
+    "src/parser.box.js",
+    "src/composer.js",
+    "src/composer.descr.js",
+    "src/composer.box.js",
+    "src/finder.js",
+    "src/mp4.js",
+    "test/jquery.min.js",
+    "test/init-xml.js",
+    "test/init-m4v-bytes.js",
+    "test/test.js"
+  ]
+}

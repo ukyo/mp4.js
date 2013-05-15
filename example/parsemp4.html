@@ -1,11 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<script type="text/javascript" src="../src/mp4.js"></script>
-		<script type="text/javascript" src="../src/mp4.utils.js"></script>
-		<script type="text/javascript" src="../src/mp4.descr.js"></script>
-		<script type="text/javascript" src="../src/mp4.box.js"></script>
-		<script type="text/javascript" src="../src/mp4.main.js"></script>
+		<script type="text/javascript" src="../dist/mp4.min.js"></script>
 		<script>
 			window.onload = function() {
 				var URL = window.URL || window.webkitURL;
@@ -18,8 +14,8 @@
 
 						reader.onload = (function(theFile) {
 							return function(e) {
-								mp4 = new mp4js.Mp4(e.target.result);
-								document.getElementById("result").innerText = JSON.stringify(mp4.parse(), null, 2);
+								mp4 = Mp4.parse(new Uint8Array(e.target.result));
+								document.getElementById("result").innerText = JSON.stringify(mp4, function (k, v) { return k !== 'bytes' ? v : void 0; }, 2);
 								//location.href = URL.createObjectURL(parser.extractAACAsBlob());
 							};
 						})(f);

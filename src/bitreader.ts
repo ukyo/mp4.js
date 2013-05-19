@@ -20,7 +20,7 @@ module Mp4 {
     view: DataView2;
     bitOffset = 0;
 
-    constructor(public bytes: Uint8Array) {
+    constructor(public bytes: Uint8Array, public littleEndian: bool = false) {
       this.view = new DataView2(bytes);
     }
 
@@ -64,49 +64,49 @@ module Mp4 {
     }
 
     readUint16(): number {
-      var ret = this.view.getUint16(this.byteOffset);
+      var ret = this.view.getUint16(this.byteOffset, this.littleEndian);
       this.skipBytes(2);
       return ret;
     }
 
     readInt16(): number {
-      var ret = this.view.getInt16(this.byteOffset);
+      var ret = this.view.getInt16(this.byteOffset, this.littleEndian);
       this.skipBytes(2);
       return ret;
     }
 
     readUint24(): number {
-      var ret = this.view.getUint24(this.byteOffset);
+      var ret = this.view.getUint24(this.byteOffset, this.littleEndian);
       this.skipBytes(3);
       return ret;
     }
 
     readInt24(): number {
-      var ret = this.view.getInt24(this.byteOffset);
+      var ret = this.view.getInt24(this.byteOffset, this.littleEndian);
       this.skipBytes(3);
       return ret;
     }
 
     readUint32(): number {
-      var ret = this.view.getUint32(this.byteOffset);
+      var ret = this.view.getUint32(this.byteOffset, this.littleEndian);
       this.skipBytes(4);
       return ret;
     }
 
     readInt32(): number {
-      var ret = this.view.getInt32(this.byteOffset);
+      var ret = this.view.getInt32(this.byteOffset, this.littleEndian);
       this.skipBytes(4);
       return ret;
     }
 
     readFloat32(): number {
-      var ret = this.view.getFloat32(this.byteOffset);
+      var ret = this.view.getFloat32(this.byteOffset, this.littleEndian);
       this.skipBytes(4);
       return ret;
     }
 
     readFloat64(): number {
-      var ret = this.view.getFloat64(this.byteOffset);
+      var ret = this.view.getFloat64(this.byteOffset, this.littleEndian);
       this.skipBytes(8);
       return ret;
     }

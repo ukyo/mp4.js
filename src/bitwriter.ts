@@ -7,7 +7,7 @@ module Mp4 {
     bitOffset = 0;
     bytes = new Uint8Array(2);
 
-    constructor() {
+    constructor(public littleEndian: bool = false) {
       this.view = new DataView2(this.bytes);
     }
 
@@ -74,49 +74,49 @@ module Mp4 {
 
     writeUint16(n: number) {
       this.expandBuffer(16);
-      this.view.setUint16(this.byteOffset, n);
+      this.view.setUint16(this.byteOffset, n, this.littleEndian);
       this.skipBytes(2);
     }
 
     writeInt16(n: number) {
       this.expandBuffer(16);
-      this.view.setInt16(this.byteOffset, n);
+      this.view.setInt16(this.byteOffset, n, this.littleEndian);
       this.skipBytes(2);
     }
 
     writeUint24(n: number) {
       this.expandBuffer(24);
-      this.view.setUint24(this.byteOffset, n);
+      this.view.setUint24(this.byteOffset, n, this.littleEndian);
       this.skipBytes(3);
     }
 
     writeInt24(n: number) {
       this.expandBuffer(24);
-      this.view.setInt24(this.byteOffset, n);
+      this.view.setInt24(this.byteOffset, n, this.littleEndian);
       this.skipBytes(3);
     }
 
     writeUint32(n: number) {
       this.expandBuffer(32);
-      this.view.setUint32(this.byteOffset, n);
+      this.view.setUint32(this.byteOffset, n, this.littleEndian);
       this.skipBytes(4);
     }
 
     writeInt32(n: number) {
       this.expandBuffer(32);
-      this.view.setInt32(this.byteOffset, n);
+      this.view.setInt32(this.byteOffset, n, this.littleEndian);
       this.skipBytes(4);
     }
 
     writeFloat32(n: number) {
       this.expandBuffer(32);
-      this.view.setFloat32(this.byteOffset, n);
+      this.view.setFloat32(this.byteOffset, n, this.littleEndian);
       this.skipBytes(4);
     }
 
     writeFloat64(n: number) {
       this.expandBuffer(64);
-      this.view.setFloat64(this.byteOffset, n);
+      this.view.setFloat64(this.byteOffset, n, this.littleEndian);
       this.skipBytes(8);
     }
 

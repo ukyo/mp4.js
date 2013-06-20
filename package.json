@@ -1,6 +1,10 @@
 {
   "name": "mp4.js",
   "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/ukyo/mp4.js"
+  },
   "devDependencies": {
     "grunt": "~0.4.1",
     "grunt-typescript": "~0.1.4",

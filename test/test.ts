@@ -1,6 +1,6 @@
 /// <reference path="../src/mp4.ts" />
-/// <reference path="jquery.d.ts" />
-/// <reference path="jasmine.d.ts" />
+/// <reference path="../d.ts/DefinitelyTyped/jquery/jquery.d.ts" />
+/// <reference path="../d.ts/DefinitelyTyped/jasmine/jasmine.d.ts" />
 
 
 var m4v: Uint8Array;
@@ -589,14 +589,14 @@ describe('Parser', () => {
   });
 });
 
-describe('Composer', () => {
+describe('Builder', () => {
   var tree = Mp4.parse(m4v);
   var finder = new Mp4.Finder(tree);
 
   describe('FileTypeBox', () => {
     var ftyp1 = <Mp4.IFileTypeBox>finder.findOne(Mp4.BOX_TYPE_FILE_TYPE_BOX);
     ftyp1.bytes = null;
-    var ftypBytes = new Mp4.Composer.FileTypeBoxComposer(ftyp1).compose();
+    var ftypBytes = new Mp4.Builder.FileTypeBoxBuilder(ftyp1).build();
     var ftyp2 = new Mp4.Parser.FileTypeBoxParser(ftypBytes).parse();
 
     it('major brand', () => expect(ftyp2.majorBrand).toBe(ftyp1.majorBrand));
@@ -611,7 +611,7 @@ describe('Composer', () => {
   describe('MovieHeaderBox', () => {
     var mvhd1 = <Mp4.IMovieHeaderBox>finder.findOne(Mp4.BOX_TYPE_MOVIE_HEADER_BOX);
     mvhd1.bytes = null;
-    var mvhdBytes = new Mp4.Composer.MovieHeaderBoxComposer(mvhd1).compose();
+    var mvhdBytes = new Mp4.Builder.MovieHeaderBoxBuilder(mvhd1).build();
     var mvhd2 = new Mp4.Parser.MovieHeaderBoxParser(mvhdBytes).parse();
 
     it('creation time', () => expect(mvhd2.creationTime).toBe(mvhd1.creationTime));
@@ -628,7 +628,7 @@ describe('Composer', () => {
   describe('TrackHeaderBox', () => {
     var tkhd1 = <Mp4.ITrackHeaderBox>finder.findOne(Mp4.BOX_TYPE_TRACK_HEADER_BOX);
     tkhd1.bytes = null;
-    var tkhdBytes = new Mp4.Composer.TrackHeaderBoxComposer(tkhd1).compose();
+    var tkhdBytes = new Mp4.Builder.TrackHeaderBoxBuilder(tkhd1).build();
     var tkhd2 = new Mp4.Parser.TrackHeaderBoxParser(tkhdBytes).parse();
 
     it('creation time', () => expect(tkhd2.creationTime).toBe(tkhd1.creationTime));
@@ -641,7 +641,7 @@ describe('Composer', () => {
   describe('MediaHeaderBox', () => {
     var mdhd1 = <Mp4.IMediaHeaderBox>finder.findOne(Mp4.BOX_TYPE_MEDIA_HEADER_BOX);
     mdhd1.bytes = null;
-    var mdhdBytes = new Mp4.Composer.MediaHeaderBoxComposer(mdhd1).compose();
+    var mdhdBytes = new Mp4.Builder.MediaHeaderBoxBuilder(mdhd1).build();
     var mdhd2 = new Mp4.Parser.MediaHeaderBoxParser(mdhdBytes).parse();
 
     it('creation time', () => expect(mdhd2.creationTime).toBe(mdhd1.creationTime));
@@ -654,7 +654,7 @@ describe('Composer', () => {
   describe('HandlerBox', () => {
     var hdlr1 = <Mp4.IHandlerBox>finder.findOne(Mp4.BOX_TYPE_HANDLER_BOX);
     hdlr1.bytes = null;
-    var hdlrBytes = new Mp4.Composer.HandlerBoxComposer(hdlr1).compose();
+    var hdlrBytes = new Mp4.Builder.HandlerBoxBuilder(hdlr1).build();
     var hdlr2 = new Mp4.Parser.HandlerBoxParser(hdlrBytes).parse();
     
     it('handler type', () => expect(hdlr2.handlerType).toBe(hdlr1.handlerType));
@@ -664,7 +664,7 @@ describe('Composer', () => {
   describe('DataReferenceBox', () => {
     var dref1 = <Mp4.IDataReferenceBox>finder.findOne(Mp4.BOX_TYPE_DATA_REFERENCE_BOX);
     dref1.bytes = null;
-    var drefBytes = new Mp4.Composer.DataReferenceBoxComposer(dref1).compose();
+    var drefBytes = new Mp4.Builder.DataReferenceBoxBuilder(dref1).build();
     var dref2 = new Mp4.Parser.DataReferenceBoxParser(drefBytes).parse();
 
     it('entry count', () => expect(dref2.entryCount).toBe(dref1.entryCount));
@@ -672,7 +672,7 @@ describe('Composer', () => {
     describe('DataEntryUrlBox', () => {
       var url1 = <Mp4.IDataEntryUrlBox>dref1.entries[0];
       url1.bytes = null;
-      var urlBytes = new Mp4.Composer.DataEntryUrlBoxComposer(url1).compose();
+      var urlBytes = new Mp4.Builder.DataEntryUrlBoxBuilder(url1).build();
       var url2 = new Mp4.Parser.DataEntryUrlBoxParser(urlBytes).parse();
 
       it('location', () => expect(url2.location).toBe(url1.location));
@@ -682,14 +682,14 @@ describe('Composer', () => {
   describe('SampleDescriptionBox', () => {
     var stsd1 = <Mp4.ISampleDescriptionBox>finder.findOne(Mp4.BOX_TYPE_SAMPLE_DESCRIPTION_BOX);
     stsd1.bytes = null;
-    var stsdBytes = new Mp4.Composer.SampleDescriptionBoxComposer(stsd1).compose();
+    var stsdBytes = new Mp4.Builder.SampleDescriptionBoxBuilder(stsd1).build();
     var stsd2 = new Mp4.Parser.SampleDescriptionBoxParser(stsdBytes).parse();
     it('entry count', () => expect(stsd1.entryCount).toBe(stsd2.entryCount));
     
     describe('MP4AudioSampleEntry', () => {
       var mp4a1 = <Mp4.IMP4AudioSampleEntry>finder.findOne(Mp4.BOX_TYPE_MP4_AUDIO_SAMPLE_ENTRY);
       mp4a1.bytes = null;
-      var mp4aBytes = new Mp4.Composer.MP4AudioSampleEntryComposer(mp4a1).compose();
+      var mp4aBytes = new Mp4.Builder.MP4AudioSampleEntryBuilder(mp4a1).build();
       var mp4a2 = new Mp4.Parser.MP4AudioSampleEntryParser(mp4aBytes).parse();
 
       it('data reference index', () => expect(mp4a2.dataReferenceIndex).toBe(mp4a1.dataReferenceIndex));
@@ -699,7 +699,7 @@ describe('Composer', () => {
       describe('ESDescriptor', () => {
         var esDescr1 = mp4a1.esBox.esDescr;
         esDescr1.bytes = null;
-        var esDescrBytes = new Mp4.Composer.ESDescriptorComposer(esDescr1).compose();
+        var esDescrBytes = new Mp4.Builder.ESDescriptorBuilder(esDescr1).build();
         var esDescr2 = new Mp4.Parser.ESDescriptorParser(esDescrBytes).parse();
 
         it('es ID', () => expect(esDescr2.esID).toBe(esDescr1.esID));
@@ -707,7 +707,7 @@ describe('Composer', () => {
         describe('DecoderConfigDescriptor', () => {
           var decConfigDescr1 = esDescr1.decConfigDescr;
           decConfigDescr1.bytes = null;
-          var decConfigDescrBytes = new Mp4.Composer.DecoderConfigDescriptorComposer(decConfigDescr1).compose();
+          var decConfigDescrBytes = new Mp4.Builder.DecoderConfigDescriptorBuilder(decConfigDescr1).build();
           var decConfigDescr2 = new Mp4.Parser.DecoderConfigDescriptorParser(decConfigDescrBytes).parse();
 
           it('object type indication', () => expect(decConfigDescr2.objectTypeIndication).toBe(decConfigDescr1.objectTypeIndication));
@@ -719,7 +719,7 @@ describe('Composer', () => {
           describe('DecoderSpecificInfo', () => {
             var decSpecificInfo1 = decConfigDescr1.decSpecificInfo;
             decSpecificInfo1.bytes = null;
-            var decSpecificInfoBytes = new Mp4.Composer.DecoderSpecificInfoComposer(decSpecificInfo1).compose();
+            var decSpecificInfoBytes = new Mp4.Builder.DecoderSpecificInfoBuilder(decSpecificInfo1).build();
             var decSpecificInfo2 = new Mp4.Parser.DecoderSpecificInfoParser(decSpecificInfoBytes).parse();
 
             it('data', () => {
@@ -734,7 +734,7 @@ describe('Composer', () => {
         describe('SLConfigDescriptor', () => {
           var slConfigDescr1 = esDescr1.slConfigDescr;
           slConfigDescr1.bytes = null;
-          var slConfigDescrBytes = new Mp4.Composer.SLConfigDescriptorComposer(slConfigDescr1).compose();
+          var slConfigDescrBytes = new Mp4.Builder.SLConfigDescriptorBuilder(slConfigDescr1).build();
           var slConfigDescr2 = new Mp4.Parser.SLConfigDescriptorParser(slConfigDescrBytes).parse();
 
           it('pre defined', () => expect(slConfigDescr2.preDefined).toBe(slConfigDescr1.preDefined));
@@ -746,7 +746,7 @@ describe('Composer', () => {
   describe('TimeToSampleBox', () => {
     var stts1 = <Mp4.ITimeToSampleBox>finder.findOne(Mp4.BOX_TYPE_TIME_TO_SAMPLE_BOX);
     stts1.bytes = null;
-    var sttsBytes = new Mp4.Composer.TimeToSampleBoxComposer(stts1).compose();
+    var sttsBytes = new Mp4.Builder.TimeToSampleBoxBuilder(stts1).build();
     var stts2 = new Mp4.Parser.TimeToSampleBoxParser(sttsBytes).parse();
 
     it('entry count', () => expect(stts2.entryCount).toBe(stts1.entryCount));
@@ -761,7 +761,7 @@ describe('Composer', () => {
   describe('SampleToChunkBox', () => {
     var stsc1 = <Mp4.ISampleToChunkBox>finder.findOne(Mp4.BOX_TYPE_SAMPLE_TO_CHUNK_BOX);
     stsc1.bytes = null;
-    var stscBytes = new Mp4.Composer.SampleToChunkBoxComposer(stsc1).compose();
+    var stscBytes = new Mp4.Builder.SampleToChunkBoxBuilder(stsc1).build();
     var stsc2 = new Mp4.Parser.SampleToChunkBoxParser(stscBytes).parse();
 
     it('entry count', () => expect(stsc2.entryCount).toBe(stsc1.entryCount));
@@ -778,7 +778,7 @@ describe('Composer', () => {
   describe('SampleSizeBox', () => {
     var stsz1 = <Mp4.ISampleSizeBox>finder.findOne(Mp4.BOX_TYPE_SAMPLE_SIZE_BOX);
     stsz1.bytes = null;
-    var stszBytes = new Mp4.Composer.SampleSizeBoxComposer(stsz1).compose();
+    var stszBytes = new Mp4.Builder.SampleSizeBoxBuilder(stsz1).build();
     var stsz2 = new Mp4.Parser.SampleSizeBoxParser(stszBytes).parse();
     it('sample size', () => expect(stsz2.sampleSize).toBe(stsz1.sampleSize));
     it('sample count', () => expect(stsz2.sampleCount).toBe(stsz1.sampleCount));
@@ -792,7 +792,7 @@ describe('Composer', () => {
   describe('ChunkOffsetBox', () => {
     var stco1 = <Mp4.IChunkOffsetBox>finder.findOne(Mp4.BOX_TYPE_CHUNK_OFFSET_BOX);
     stco1.bytes = null;
-    var stcoBytes = new Mp4.Composer.ChunkOffsetBoxComposer(stco1).compose();
+    var stcoBytes = new Mp4.Builder.ChunkOffsetBoxBuilder(stco1).build();
     var stco2 = new Mp4.Parser.ChunkOffsetBoxParser(stcoBytes).parse();
     it('entry count', () => expect(stco2.entryCount).toBe(stco1.entryCount));
     it('entries', () => {

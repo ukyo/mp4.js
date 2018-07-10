@@ -1,11 +1,7 @@
-/// <reference path="mp4.ts" />
+import { BitWriter } from "./bitwriter";
 
-module Mp4.Builder {
-
-  export class BaseBuilder extends BitWriter {
-    build(): Uint8Array {
-      return this.data;
-    }
+export class BaseBuilder extends BitWriter {
+  build(): Uint8Array {
+    return this.data;
   }
-
 }

@@ -1,0 +1,33 @@
+export declare class DataView2 {
+    private view;
+    private buffer;
+    private byteOffset;
+    private byteLength;
+    constructor(buffer: any, byteOffset?: number, byteLength?: number);
+    getUint8(byteOffset: number): number;
+    setUint8(byteOffset: number, value: number): void;
+    getInt8(byteOffset: number): number;
+    setInt8(byteOffset: number, value: number): void;
+    getUint16(byteOffset: number, littleEndian?: boolean): number;
+    setUint16(byteOffset: number, value: number, littleEndian?: boolean): void;
+    getInt16(byteOffset: number, littleEndian?: boolean): number;
+    setInt16(byteOffset: number, value: number, littleEndian?: boolean): void;
+    getUint32(byteOffset: number, littleEndian?: boolean): number;
+    setUint32(byteOffset: number, value: number, littleEndian?: boolean): void;
+    getInt32(byteOffset: number, littleEndian?: boolean): number;
+    setInt32(byteOffset: number, value: number, littleEndian?: boolean): void;
+    getFloat32(byteOffset: number, littleEndian?: boolean): number;
+    setFloat32(byteOffset: number, value: number, littleEndian?: boolean): void;
+    getFloat64(byteOffset: number, littleEndian?: boolean): number;
+    setFloat64(byteOffset: number, value: number, littleEndian?: boolean): void;
+    getString(byteOffset: number, byteLength: number): string;
+    setString(byteOffset: number, s: string): void;
+    getUTF8String(byteOffset: number, byteLength: number): string;
+    static stringToUTF8Bytes(s: string): Uint8Array;
+    static UTF8BytesToString(bytes: Uint8Array): string;
+    setUTF8String(byteOffset: number, s: string): number;
+    getUint24(byteOffset: number, littleEndian?: boolean): number;
+    setUint24(byteOffset: number, value: number, littleEndian?: boolean): void;
+    getInt24(byteOffset: number, littleEndian?: boolean): number;
+    setInt24(byteOffset: number, value: number, littleEndian?: boolean): void;
+}

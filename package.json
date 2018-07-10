@@ -1,14 +1,22 @@
 {
   "name": "mp4.js",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/ukyo/mp4.js"
   },
+  "scripts": {
+    "test": "testem",
+    "build": "webpack"
+  },
   "devDependencies": {
-    "grunt": "~0.4.1",
-    "grunt-typescript": "~0.1.4",
-    "grunt-contrib-watch": "~0.3.1",
-    "grunt-contrib-uglify": "~0.2.0"
+    "@types/jasmine": "^2.8.8",
+    "@types/jquery": "^3.3.4",
+    "jquery": "^3.3.1",
+    "testem": "^2.8.2",
+    "ts-loader": "^4.4.2",
+    "typescript": "^2.9.2",
+    "webpack": "^4.15.1",
+    "webpack-cli": "^3.0.8"
   }
 }

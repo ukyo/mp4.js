@@ -1,0 +1,163 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const dataview_1 = require("./dataview");
+// prettier-ignore
+const BIT_MASKS = [
+    0x00000000,
+    0x00000001, 0x00000003, 0x00000007, 0x0000000F,
+    0x0000001F, 0x0000003F, 0x0000007F, 0x000000FF,
+    0x000001FF, 0x000003FF, 0x000007FF, 0x00000FFF,
+    0x00001FFF, 0x00003FFF, 0x00007FFF, 0x0000FFFF,
+    0x0001FFFF, 0x0003FFFF, 0x0007FFFF, 0x000FFFFF,
+    0x001FFFFF, 0x003FFFFF, 0x007FFFFF, 0x00FFFFFF,
+    0x01FFFFFF //, 0x03FFFFFF, 0x07FFFFFF, 0x0FFFFFFF,
+    // 0x1FFFFFFF, 0x3FFFFFFF, 0x7FFFFFFF, 0xFFFFFFFF
+];
+const POW25 = Math.pow(2, 25);
+const POW32 = Math.pow(2, 32);
+class BitReader {
+    constructor(bytes, littleEndian = false) {
+        this.bytes = bytes;
+        this.littleEndian = littleEndian;
+        this.bitOffset = 0;
+        this.view = new dataview_1.DataView2(bytes);
+    }
+    readBits(n) {
+        if (n <= 0)
+            throw new Error();
+        let tmp;
+        let needBytes;
+        let m;
+        let ret = 0;
+        const max = 25;
+        while (n > 0) {
+            m = n > max ? max : n;
+            ret *= POW25;
+            needBytes = Math.ceil(((this.bitOffset % 8) + m) / 8);
+            switch (needBytes) {
+                case 1:
+                    tmp = this.view.getUint8(this.byteOffset);
+                    break;
+                case 2:
+                    tmp = this.view.getUint16(this.byteOffset);
+                    break;
+                case 3:
+                    tmp = this.view.getUint24(this.byteOffset);
+                    break;
+                case 4:
+                    tmp = this.view.getUint32(this.byteOffset);
+                    break;
+            }
+            ret +=
+                (tmp >>> (needBytes * 8 - ((this.bitOffset % 8) + m))) & BIT_MASKS[m];
+            this.skipBits(m);
+            n -= m;
+        }
+        return ret;
+    }
+    readUint8() {
+        const ret = this.view.getUint8(this.byteOffset);
+        this.skipBytes(1);
+        return ret;
+    }
+    readInt8() {
+        const ret = this.view.getInt8(this.byteOffset);
+        this.skipBytes(1);
+        return ret;
+    }
+    readUint16() {
+        const ret = this.view.getUint16(this.byteOffset, this.littleEndian);
+        this.skipBytes(2);
+        return ret;
+    }
+    readInt16() {
+        const ret = this.view.getInt16(this.byteOffset, this.littleEndian);
+        this.skipBytes(2);
+        return ret;
+    }
+    readUint24() {
+        const ret = this.view.getUint24(this.byteOffset, this.littleEndian);
+        this.skipBytes(3);
+        return ret;
+    }
+    readInt24() {
+        const ret = this.view.getInt24(this.byteOffset, this.littleEndian);
+        this.skipBytes(3);
+        return ret;
+    }
+    readUint32() {
+        const ret = this.view.getUint32(this.byteOffset, this.littleEndian);
+        this.skipBytes(4);
+        return ret;
+    }
+    readUint64() {
+        return this.readUint32() + this.readUint32() * POW32;
+    }
+    readInt32() {
+        const ret = this.view.getInt32(this.byteOffset, this.littleEndian);
+        this.skipBytes(4);
+        return ret;
+    }
+    readFloat32() {
+        const ret = this.view.getFloat32(this.byteOffset, this.littleEndian);
+        this.skipBytes(4);
+        return ret;
+    }
+    readFloat64() {
+        const ret = this.view.getFloat64(this.byteOffset, this.littleEndian);
+        this.skipBytes(8);
+        return ret;
+    }
+    readBytes(n) {
+        const byteOffset = this.byteOffset;
+        const ret = this.bytes.subarray(byteOffset, byteOffset + n);
+        this.skipBytes(n);
+        return ret;
+    }
+    readString(n = 0) {
+        let ret;
+        if (n === 0) {
+            const bytes = this.bytes.subarray(this.byteOffset);
+            ret = String.fromCharCode.apply(null, bytes);
+            n = bytes.length;
+        }
+        else {
+            ret = this.view.getString(this.byteOffset, n);
+        }
+        this.skipBytes(n);
+        return ret;
+    }
+    readStringNullTerminated() {
+        const bytes = this.bytes.subarray(this.byteOffset);
+        let i = 0;
+        if (!bytes.byteLength)
+            return "";
+        while (bytes[i++] !== 0)
+            ;
+        this.skipBytes(i);
+        return String.fromCharCode.apply(null, bytes.subarray(0, i - 1));
+    }
+    readUTF8StringNullTerminated() {
+        const bytes = this.bytes.subarray(this.byteOffset);
+        let i = 0;
+        if (!bytes.byteLength)
+            return "";
+        while (bytes[i++] !== 0)
+            ;
+        this.skipBytes(i);
+        return dataview_1.DataView2.UTF8BytesToString(bytes.subarray(0, i - 1));
+    }
+    skipBits(n) {
+        this.bitOffset += n;
+    }
+    skipBytes(n) {
+        this.bitOffset += n * 8;
+    }
+    get byteOffset() {
+        return this.bitOffset >>> 3;
+    }
+    eof() {
+        return this.bitOffset / 8 >= this.bytes.length;
+    }
+}
+exports.BitReader = BitReader;

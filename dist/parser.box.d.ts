@@ -122,6 +122,9 @@ export declare class SampleToChunkBoxParser extends FullBoxParser {
 export declare class ChunkOffsetBoxParser extends FullBoxParser {
     parse(): IChunkOffsetBox;
 }
+export declare class ChunkOffset64BoxParser extends FullBoxParser {
+    parse(): IChunkOffsetBox;
+}
 export declare class SyncSampleBoxParser extends FullBoxParser {
     parse(): ISyncSampleBox;
 }

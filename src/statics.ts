@@ -30,6 +30,7 @@ export const BOX_TYPE_SAMPLE_DESCRIPTION_BOX = "stsd";
 export const BOX_TYPE_SAMPLE_SIZE_BOX = "stsz";
 export const BOX_TYPE_SAMPLE_TO_CHUNK_BOX = "stsc";
 export const BOX_TYPE_CHUNK_OFFSET_BOX = "stco";
+export const BOX_TYPE_CHUNK_OFFSET64_BOX = "co64";
 export const BOX_TYPE_SYNC_SAMPLE_BOX = "stss";
 export const BOX_TYPE_SHADOW_SYNC_SAMPLE_BOX = "stsh";
 export const BOX_TYPE_DEGRADATION_PRIORITY_BOX = "stdp";

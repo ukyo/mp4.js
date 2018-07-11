@@ -27,7 +27,8 @@ import {
   BOX_TYPE_SAMPLE_TABLE_BOX,
   BOX_TYPE_SAMPLE_DESCRIPTION_BOX,
   BOX_TYPE_TIME_TO_SAMPLE_BOX,
-  BOX_TYPE_MP4_AUDIO_SAMPLE_ENTRY
+  BOX_TYPE_MP4_AUDIO_SAMPLE_ENTRY,
+  BOX_TYPE_CHUNK_OFFSET64_BOX
 } from "./statics";
 import {
   FileTypeBoxBuilder,
@@ -86,6 +87,8 @@ var getChunks = (bytes: Uint8Array, trackBox: ITrackBox): Uint8Array[] => {
   var stsc = <ISampleToChunkBox>finder.findOne(BOX_TYPE_SAMPLE_TO_CHUNK_BOX);
   var stsz = <ISampleSizeBox>finder.findOne(BOX_TYPE_SAMPLE_SIZE_BOX);
   var stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET_BOX);
+  if (!stco)
+    stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET64_BOX);
 
   var i, j, k, idx, n, m, l, chunkStart, chunkEnd;
 
@@ -175,6 +178,7 @@ export var extractAudio = (bytes: Uint8Array): Uint8Array => {
   var stsc = finder.findOne(BOX_TYPE_SAMPLE_TO_CHUNK_BOX);
   var stsz = finder.findOne(BOX_TYPE_SAMPLE_SIZE_BOX);
   var stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET_BOX);
+  if (!stco) <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET64_BOX);
   var stcoBytes = stco.bytes;
   offset +=
     stsd.bytes.length +
@@ -225,6 +229,8 @@ var extractAudioAsAAC = (bytes: Uint8Array, audioTrack: any): Uint8Array => {
   var stsc = <ISampleToChunkBox>finder.findOne(BOX_TYPE_SAMPLE_TO_CHUNK_BOX);
   var stsz = <ISampleSizeBox>finder.findOne(BOX_TYPE_SAMPLE_SIZE_BOX);
   var stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET_BOX);
+  if (!stco)
+    stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET64_BOX);
 
   var ret = new Uint8Array(
     stsz.sampleSizes.length * 7 + stsz.sampleSizes.reduce((a, b) => a + b)

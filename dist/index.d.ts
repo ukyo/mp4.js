@@ -114,6 +114,7 @@ export declare const Mp4: {
         SampleSizeBoxParser: typeof boxParsers.SampleSizeBoxParser;
         SampleToChunkBoxParser: typeof boxParsers.SampleToChunkBoxParser;
         ChunkOffsetBoxParser: typeof boxParsers.ChunkOffsetBoxParser;
+        ChunkOffset64BoxParser: typeof boxParsers.ChunkOffset64BoxParser;
         SyncSampleBoxParser: typeof boxParsers.SyncSampleBoxParser;
         ShadowSyncSampleBoxParser: typeof boxParsers.ShadowSyncSampleBoxParser;
         DegradationPriorityBoxParser: typeof boxParsers.DegradationPriorityBoxParser;
@@ -190,6 +191,7 @@ export declare const Mp4: {
     BOX_TYPE_SAMPLE_SIZE_BOX: "stsz";
     BOX_TYPE_SAMPLE_TO_CHUNK_BOX: "stsc";
     BOX_TYPE_CHUNK_OFFSET_BOX: "stco";
+    BOX_TYPE_CHUNK_OFFSET64_BOX: "co64";
     BOX_TYPE_SYNC_SAMPLE_BOX: "stss";
     BOX_TYPE_SHADOW_SYNC_SAMPLE_BOX: "stsh";
     BOX_TYPE_DEGRADATION_PRIORITY_BOX: "stdp";

@@ -30,6 +30,7 @@ export declare const BOX_TYPE_SAMPLE_DESCRIPTION_BOX = "stsd";
 export declare const BOX_TYPE_SAMPLE_SIZE_BOX = "stsz";
 export declare const BOX_TYPE_SAMPLE_TO_CHUNK_BOX = "stsc";
 export declare const BOX_TYPE_CHUNK_OFFSET_BOX = "stco";
+export declare const BOX_TYPE_CHUNK_OFFSET64_BOX = "co64";
 export declare const BOX_TYPE_SYNC_SAMPLE_BOX = "stss";
 export declare const BOX_TYPE_SHADOW_SYNC_SAMPLE_BOX = "stsh";
 export declare const BOX_TYPE_DEGRADATION_PRIORITY_BOX = "stdp";

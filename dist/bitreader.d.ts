@@ -13,6 +13,7 @@ export declare class BitReader {
     readUint24(): number;
     readInt24(): number;
     readUint32(): number;
+    readUint64(): number;
     readInt32(): number;
     readFloat32(): number;
     readFloat64(): number;

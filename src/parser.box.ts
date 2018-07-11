@@ -138,7 +138,8 @@ import {
   BOX_TYPE_ITEM_INFO_ENTRY,
   BOX_TYPE_PROTECTION_SCHEME_INFO_BOX,
   BOX_TYPE_IPMP_INFO_BOX,
-  BOX_TYPE_ORIGINAL_FORMAT_BOX
+  BOX_TYPE_ORIGINAL_FORMAT_BOX,
+  BOX_TYPE_CHUNK_OFFSET64_BOX
 } from "./statics";
 import { IESDescriptor, IIPMPDescriptor } from "./interface.descr";
 
@@ -598,6 +599,20 @@ export class ChunkOffsetBoxParser extends FullBoxParser {
     ret.chunkOffsets = [];
     for (var i = 0; i < entryCount; ++i) {
       ret.chunkOffsets.push(this.readUint32());
+    }
+    return ret;
+  }
+}
+
+@Type(BOX_TYPE_CHUNK_OFFSET64_BOX)
+export class ChunkOffset64BoxParser extends FullBoxParser {
+  parse(): IChunkOffsetBox {
+    var ret = <IChunkOffsetBox>super.parse();
+    var entryCount = this.readUint32();
+    ret.entryCount = entryCount;
+    ret.chunkOffsets = [];
+    for (var i = 0; i < entryCount; ++i) {
+      ret.chunkOffsets.push(this.readUint64());
     }
     return ret;
   }

@@ -14,6 +14,7 @@ const BIT_MASKS: number[] = [
   ];
 
 const POW25 = Math.pow(2, 25);
+const POW32 = Math.pow(2, 32);
 
 export class BitReader {
   view: DataView2;
@@ -99,6 +100,10 @@ export class BitReader {
     const ret = this.view.getUint32(this.byteOffset, this.littleEndian);
     this.skipBytes(4);
     return ret;
+  }
+
+  readUint64(): number {
+    return this.readUint32() + this.readUint32() * POW32;
   }
 
   readInt32(): number {

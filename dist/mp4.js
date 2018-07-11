@@ -104,7 +104,7 @@ exports.extractAudio = (bytes) => {
     var stsz = finder.findOne(statics_1.BOX_TYPE_SAMPLE_SIZE_BOX);
     var stco = finder.findOne(statics_1.BOX_TYPE_CHUNK_OFFSET_BOX);
     if (!stco)
-        finder.findOne(statics_1.BOX_TYPE_CHUNK_OFFSET64_BOX);
+        stco = finder.findOne(statics_1.BOX_TYPE_CHUNK_OFFSET64_BOX);
     var stcoBytes = stco.bytes;
     offset +=
         stsd.bytes.length +
@@ -118,7 +118,9 @@ exports.extractAudio = (bytes) => {
         offset += chunks[i - 1].length;
         chunkOffsets[i] = offset;
     }
-    stcoBytes = new composer_box_1.ChunkOffsetBoxBuilder({
+    stcoBytes = new (stco.type === statics_1.BOX_TYPE_CHUNK_OFFSET_BOX
+        ? composer_box_1.ChunkOffsetBoxBuilder
+        : composer_box_1.ChunkOffset64BoxBuilder)({
         entryCount: stco.entryCount,
         chunkOffsets: chunkOffsets
     }).build();

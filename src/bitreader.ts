@@ -103,7 +103,7 @@ export class BitReader {
   }
 
   readUint64(): number {
-    return this.readUint32() + this.readUint32() * POW32;
+    return this.readUint32() * POW32 + this.readUint32();
   }
 
   readInt32(): number {

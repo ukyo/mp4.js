@@ -445,6 +445,17 @@ ChunkOffsetBoxBuilder = __decorate([
     Type(statics_1.BOX_TYPE_CHUNK_OFFSET_BOX)
 ], ChunkOffsetBoxBuilder);
 exports.ChunkOffsetBoxBuilder = ChunkOffsetBoxBuilder;
+let ChunkOffset64BoxBuilder = class ChunkOffset64BoxBuilder extends FullBoxBuilder {
+    constructor(box) {
+        super(box);
+        this.writeUint32(box.entryCount);
+        box.chunkOffsets.forEach((offset, i) => this.writeUint64(offset));
+    }
+};
+ChunkOffset64BoxBuilder = __decorate([
+    Type(statics_1.BOX_TYPE_CHUNK_OFFSET64_BOX)
+], ChunkOffset64BoxBuilder);
+exports.ChunkOffset64BoxBuilder = ChunkOffset64BoxBuilder;
 var createBoxBuilder = (box) => {
     return new (dict[box.type] || BoxBuilder)(box);
 };

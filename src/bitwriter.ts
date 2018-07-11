@@ -1,5 +1,7 @@
 import { DataView2 } from "./dataview";
 
+const POW32 = Math.pow(2, 32);
+
 export class BitWriter {
   view: DataView2;
   bitOffset = 0;
@@ -113,6 +115,18 @@ export class BitWriter {
   writeUint32(n: number) {
     this.expandBuffer(32);
     this.view.setUint32(this.byteOffset, n, this.littleEndian);
+    this.skipBytes(4);
+  }
+
+  writeUint64(n: number) {
+    this.expandBuffer(64);
+    this.view.setUint32(this.byteOffset / POW32, n, this.littleEndian);
+    this.skipBytes(4);
+    this.view.setUint32(
+      (this.byteOffset & 0xffffffff) >>> 0,
+      n,
+      this.littleEndian
+    );
     this.skipBytes(4);
   }
 

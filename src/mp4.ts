@@ -51,7 +51,8 @@ import {
   SampleDescriptionBoxBuilder,
   TimeToSampleBoxBuilder,
   SampleSizeBoxBuilder,
-  SampleToChunkBoxBuilder
+  SampleToChunkBoxBuilder,
+  ChunkOffset64BoxBuilder
 } from "./composer.box";
 import { DecoderConfigDescriptorParser } from "./parser.descr";
 import { BitReader } from "./bitreader";
@@ -178,7 +179,8 @@ export var extractAudio = (bytes: Uint8Array): Uint8Array => {
   var stsc = finder.findOne(BOX_TYPE_SAMPLE_TO_CHUNK_BOX);
   var stsz = finder.findOne(BOX_TYPE_SAMPLE_SIZE_BOX);
   var stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET_BOX);
-  if (!stco) <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET64_BOX);
+  if (!stco)
+    stco = <IChunkOffsetBox>finder.findOne(BOX_TYPE_CHUNK_OFFSET64_BOX);
   var stcoBytes = stco.bytes;
   offset +=
     stsd.bytes.length +
@@ -193,7 +195,9 @@ export var extractAudio = (bytes: Uint8Array): Uint8Array => {
     offset += chunks[i - 1].length;
     chunkOffsets[i] = offset;
   }
-  stcoBytes = new ChunkOffsetBoxBuilder({
+  stcoBytes = new (stco.type === BOX_TYPE_CHUNK_OFFSET_BOX
+    ? ChunkOffsetBoxBuilder
+    : ChunkOffset64BoxBuilder)({
     entryCount: stco.entryCount,
     chunkOffsets: chunkOffsets
   }).build();

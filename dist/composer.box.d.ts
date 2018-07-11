@@ -110,3 +110,6 @@ export declare class SampleToChunkBoxBuilder extends FullBoxBuilder {
 export declare class ChunkOffsetBoxBuilder extends FullBoxBuilder {
     constructor(box: IChunkOffsetBox);
 }
+export declare class ChunkOffset64BoxBuilder extends FullBoxBuilder {
+    constructor(box: IChunkOffsetBox);
+}

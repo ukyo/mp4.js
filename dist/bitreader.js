@@ -91,7 +91,7 @@ class BitReader {
         return ret;
     }
     readUint64() {
-        return this.readUint32() + this.readUint32() * POW32;
+        return this.readUint32() * POW32 + this.readUint32();
     }
     readInt32() {
         const ret = this.view.getInt32(this.byteOffset, this.littleEndian);

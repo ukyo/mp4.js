@@ -61,7 +61,8 @@ import {
   BOX_TYPE_SAMPLE_DESCRIPTION_BOX,
   BOX_TYPE_SAMPLE_SIZE_BOX,
   BOX_TYPE_SAMPLE_TO_CHUNK_BOX,
-  BOX_TYPE_CHUNK_OFFSET_BOX
+  BOX_TYPE_CHUNK_OFFSET_BOX,
+  BOX_TYPE_CHUNK_OFFSET64_BOX
 } from "./statics";
 
 const dict: { [type: string]: { new (box: IBox): BoxBuilder } } = {};
@@ -205,7 +206,7 @@ export class MediaHeaderBoxBuilder extends FullBoxBuilder {
     this.writeUint32(box.duration);
     this.skipBits(1);
     [].forEach.call(box.language, (c: string, i: number) => {
-      this.writeBits(box.language.charCodeAt(i) - 0x60, 5)
+      this.writeBits(box.language.charCodeAt(i) - 0x60, 5);
     });
     this.skipBytes(2);
   }
@@ -426,6 +427,15 @@ export class ChunkOffsetBoxBuilder extends FullBoxBuilder {
     super(box);
     this.writeUint32(box.entryCount);
     box.chunkOffsets.forEach((offset, i) => this.writeUint32(offset));
+  }
+}
+
+@Type(BOX_TYPE_CHUNK_OFFSET64_BOX)
+export class ChunkOffset64BoxBuilder extends FullBoxBuilder {
+  constructor(box: IChunkOffsetBox) {
+    super(box);
+    this.writeUint32(box.entryCount);
+    box.chunkOffsets.forEach((offset, i) => this.writeUint64(offset));
   }
 }
 

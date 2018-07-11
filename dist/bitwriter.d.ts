@@ -18,6 +18,7 @@ export declare class BitWriter {
     writeUint24(n: number): void;
     writeInt24(n: number): void;
     writeUint32(n: number): void;
+    writeUint64(n: number): void;
     writeInt32(n: number): void;
     writeFloat32(n: number): void;
     writeFloat64(n: number): void;

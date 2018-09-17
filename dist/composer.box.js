@@ -89,10 +89,18 @@ exports.MediaDataBoxBuilder = MediaDataBoxBuilder;
 let MovieHeaderBoxBuilder = class MovieHeaderBoxBuilder extends FullBoxBuilder {
     constructor(box) {
         super(box);
-        this.writeUint32(box.creationTime);
-        this.writeUint32(box.modificationTime);
-        this.writeUint32(box.timescale);
-        this.writeUint32(box.duration);
+        if (box.version === 1) {
+            this.writeUint64(box.creationTime);
+            this.writeUint64(box.modificationTime);
+            this.writeUint32(box.timescale);
+            this.writeUint64(box.duration);
+        }
+        else {
+            this.writeUint32(box.creationTime);
+            this.writeUint32(box.modificationTime);
+            this.writeUint32(box.timescale);
+            this.writeUint32(box.duration);
+        }
         this.writeInt32(box.rate * 0x10000);
         this.writeInt16(box.volume * 0x100);
         this.skipBytes(2);
@@ -115,11 +123,20 @@ exports.TrackBoxBuilder = TrackBoxBuilder;
 let TrackHeaderBoxBuilder = class TrackHeaderBoxBuilder extends FullBoxBuilder {
     constructor(box) {
         super(box);
-        this.writeUint32(box.creationTime);
-        this.writeUint32(box.modificationTime);
-        this.writeUint32(box.trackID);
-        this.skipBytes(4);
-        this.writeUint32(box.duration);
+        if (box.version === 1) {
+            this.writeUint64(box.creationTime);
+            this.writeUint64(box.modificationTime);
+            this.writeUint32(box.trackID);
+            this.skipBytes(4);
+            this.writeUint64(box.duration);
+        }
+        else {
+            this.writeUint64(box.creationTime);
+            this.writeUint64(box.modificationTime);
+            this.writeUint32(box.trackID);
+            this.skipBytes(4);
+            this.writeUint64(box.duration);
+        }
         this.skipBytes(4 * 2);
         this.writeInt16(box.layer);
         this.writeInt16(box.alternateGroup);
@@ -168,10 +185,18 @@ exports.MediaBoxBuilder = MediaBoxBuilder;
 let MediaHeaderBoxBuilder = class MediaHeaderBoxBuilder extends FullBoxBuilder {
     constructor(box) {
         super(box);
-        this.writeUint32(box.creationTime);
-        this.writeUint32(box.modificationTime);
-        this.writeUint32(box.timescale);
-        this.writeUint32(box.duration);
+        if (box.version === 1) {
+            this.writeUint64(box.creationTime);
+            this.writeUint64(box.modificationTime);
+            this.writeUint32(box.timescale);
+            this.writeUint64(box.duration);
+        }
+        else {
+            this.writeUint32(box.creationTime);
+            this.writeUint32(box.modificationTime);
+            this.writeUint32(box.timescale);
+            this.writeUint32(box.duration);
+        }
         this.skipBits(1);
         [].forEach.call(box.language, (c, i) => {
             this.writeBits(box.language.charCodeAt(i) - 0x60, 5);

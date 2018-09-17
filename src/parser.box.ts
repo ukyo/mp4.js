@@ -261,10 +261,17 @@ export class MovieHeaderBoxParser extends FullBoxParser {
   parse(): IMovieHeaderBox {
     var ret = <IMovieHeaderBox>super.parse();
     ret.matrix = [];
-    ret.creationTime = this.readUint32();
-    ret.modificationTime = this.readUint32();
-    ret.timescale = this.readUint32();
-    ret.duration = this.readUint32();
+    if (this.version === 1) {
+      ret.creationTime = this.readUint64();
+      ret.modificationTime = this.readUint64();
+      ret.timescale = this.readUint32();
+      ret.duration = this.readUint64();
+    } else {
+      ret.creationTime = this.readUint32();
+      ret.modificationTime = this.readUint32();
+      ret.timescale = this.readUint32();
+      ret.duration = this.readUint32();
+    }
     ret.rate = this.readUint32();
     ret.volume = this.readUint16();
     this.skipBytes(2);
@@ -284,11 +291,19 @@ export class TrackHeaderBoxParser extends FullBoxParser {
   parse(): ITrackHeaderBox {
     var ret = <ITrackHeaderBox>super.parse();
     ret.matrix = [];
-    ret.creationTime = this.readUint32();
-    ret.modificationTime = this.readUint32();
-    ret.trackID = this.readUint32();
-    this.skipBytes(4);
-    ret.duration = this.readUint32();
+    if (this.version === 1) {
+      ret.creationTime = this.readUint64();
+      ret.modificationTime = this.readUint64();
+      ret.trackID = this.readUint32();
+      this.skipBytes(4);
+      ret.duration = this.readUint64();
+    } else {
+      ret.creationTime = this.readUint32();
+      ret.modificationTime = this.readUint32();
+      ret.trackID = this.readUint32();
+      this.skipBytes(4);
+      ret.duration = this.readUint32();
+    }
     this.skipBytes(4 * 2);
     ret.layer = this.readInt16();
     ret.alternateGroup = this.readInt16();
@@ -326,10 +341,18 @@ export class MediaBoxParser extends BoxListParser {}
 export class MediaHeaderBoxParser extends FullBoxParser {
   parse(): IMediaHeaderBox {
     var ret = <IMediaHeaderBox>super.parse();
-    ret.creationTime = this.readUint32();
-    ret.modificationTime = this.readUint32();
-    ret.timescale = this.readUint32();
-    ret.duration = this.readUint32();
+    if (this.version === 1) {
+      ret.creationTime = this.readUint64();
+      ret.modificationTime = this.readUint64();
+      ret.timescale = this.readUint32();
+      ret.duration = this.readUint64();
+    } else {
+      ret.creationTime = this.readUint32();
+      ret.modificationTime = this.readUint32();
+      ret.timescale = this.readUint32();
+      ret.duration = this.readUint32();
+    }
+
     this.skipBits(1);
     ret.language = String.fromCharCode.apply(
       null,
@@ -701,11 +724,19 @@ export class EditListBoxParser extends FullBoxParser {
     ret.entryCount = entryCount;
     ret.entries = [];
     for (var i = 0; i < entryCount; ++i) {
-      ret.entries.push({
-        sagmentDuration: this.readUint32(),
-        mediaTime: this.readUint32(),
-        mediaRateInteger: this.readUint16()
-      });
+      if (this.version === 1) {
+        ret.entries.push({
+          sagmentDuration: this.readUint64(),
+          mediaTime: this.readUint64(),
+          mediaRateInteger: this.readUint16()
+        });
+      } else {
+        ret.entries.push({
+          sagmentDuration: this.readUint32(),
+          mediaTime: this.readUint32(),
+          mediaRateInteger: this.readUint16()
+        });
+      }
       this.skipBytes(2);
     }
     return ret;
@@ -734,7 +765,8 @@ export class MovieExtendsBoxParser extends BoxListParser {}
 export class MovieExtendsHeaderBoxParser extends FullBoxParser {
   parse(): IMovieExtendsHeaderBox {
     var ret = <IMovieExtendsHeaderBox>super.parse();
-    ret.fragmentDuration = this.readUint32();
+    ret.fragmentDuration =
+      this.version === 1 ? this.readUint64() : this.readUint32();
     return ret;
   }
 }
@@ -817,8 +849,8 @@ export class TrackFragmentRandomAccessBoxParser extends FullBoxParser {
     ret.entries = [];
     for (var i = 0; i < numberOfEntry; ++i) {
       ret.entries.push({
-        time: this.readUint32(),
-        moofOffset: this.readUint32(),
+        time: this.version === 1 ? this.readUint64() : this.readUint32(),
+        moofOffset: this.version === 1 ? this.readUint64() : this.readUint32(),
         trafNumber: this.readBits((ret.lengthSizeOfTrafNum + 1) * 8),
         trunNumber: this.readBits((ret.lengthSizeOfTrunNum + 1) * 8),
         sampleNumber: this.readBits((ret.lengthSizeOfSampleNum + 1) * 8)

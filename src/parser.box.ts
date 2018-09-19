@@ -820,7 +820,7 @@ export class TrackRunBoxParser extends FullBoxParser {
     var sampleCount = this.readUint32();
     ret.sampleCount = sampleCount;
     if (ret.flags & 0x000001) ret.dataOffset = this.readInt32();
-    if (ret.flags & 0x000002) ret.firstSampleFlats = this.readUint32();
+    if (ret.flags & 0x000004) ret.firstSampleFlats = this.readUint32();
     ret.samples = [];
     for (var i = 0; i < sampleCount; ++i) {
       ret.samples.push({

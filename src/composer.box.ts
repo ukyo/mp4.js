@@ -175,11 +175,11 @@ export class TrackHeaderBoxBuilder extends FullBoxBuilder {
       this.skipBytes(4);
       this.writeUint64(box.duration);
     } else {
-      this.writeUint64(box.creationTime);
-      this.writeUint64(box.modificationTime);
+      this.writeUint32(box.creationTime);
+      this.writeUint32(box.modificationTime);
       this.writeUint32(box.trackID);
       this.skipBytes(4);
-      this.writeUint64(box.duration);
+      this.writeUint32(box.duration);
     }
     this.skipBytes(4 * 2);
     this.writeInt16(box.layer);

@@ -236,13 +236,16 @@ export declare const Mp4: {
     DESCR_TAG_DECODER_SPECIFIC_INFO: 5;
     DESCR_TAG_SL_CONFIG_DESCRIPTOR: 6;
     DESCR_TAG_PROFILE_LEVEL_INDICATION_INDEX_DESCRIPTOR: 20;
-    parse: (bytes: Uint8Array) => import("../../../../../Users/ukyo/work/mp4.js/src/interface.box").IBox[];
-    extractAudio: (bytes: Uint8Array) => Uint8Array;
-    extractRawAudio: (bytes: Uint8Array) => {
+    getChunks(bytes: Uint8Array, trackBox: import("../../../../../Users/ukyo/work/mp4.js/src/interface.box").ITrackBox): Uint8Array[];
+    concatBytes(bytess: Uint8Array[]): Uint8Array;
+    parse(bytes: Uint8Array): import("../../../../../Users/ukyo/work/mp4.js/src/interface.box").IBox[];
+    createMp4DescriptorSpecificInfo(sampleRate: number, channels: number): Uint8Array;
+    extractAudio(bytes: Uint8Array): Uint8Array;
+    extractRawAudio(bytes: Uint8Array): {
         type: string;
         data: Uint8Array;
     };
-    aacToM4a: (bytes: Uint8Array) => Uint8Array;
+    aacToM4a(bytes: Uint8Array): Uint8Array;
     DataView2: typeof DataView2;
     BitReader: typeof BitReader;
     BitWriter: typeof BitWriter;

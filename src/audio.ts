@@ -94,7 +94,7 @@ export function createMp4DescriptorSpecificInfo(
   sampleRate: number,
   channels: number
 ) {
-  const sampleFrequencyIndex = SAMPLERATE_TABLE.indexOf[sampleRate];
+  const sampleFrequencyIndex = SAMPLERATE_TABLE.indexOf(sampleRate);
   const byte1 = (2 << 3) | (sampleFrequencyIndex >> 1);
   const byte2 = ((sampleFrequencyIndex << 7) | (channels << 3)) & 0xff;
   return new Uint8Array([byte1, byte2]);

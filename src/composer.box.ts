@@ -27,7 +27,8 @@ import {
   ISampleSizeBox,
   ISampleToChunkBox,
   IChunkOffsetBox,
-  IBox
+  IBox,
+  ISampleDependencyTypeBox
 } from "./interface.box";
 import {
   BOX_TYPE_FILE_TYPE_BOX,
@@ -62,7 +63,8 @@ import {
   BOX_TYPE_SAMPLE_SIZE_BOX,
   BOX_TYPE_SAMPLE_TO_CHUNK_BOX,
   BOX_TYPE_CHUNK_OFFSET_BOX,
-  BOX_TYPE_CHUNK_OFFSET64_BOX
+  BOX_TYPE_CHUNK_OFFSET64_BOX,
+  BOX_TYPE_SAMPLE_DEPENDENCY_TYPE_BOX
 } from "./statics";
 
 const dict: { [type: string]: { new (box: IBox): BoxBuilder } } = {};
@@ -458,6 +460,19 @@ export class ChunkOffset64BoxBuilder extends FullBoxBuilder {
     super(box);
     this.writeUint32(box.entryCount);
     box.chunkOffsets.forEach((offset, i) => this.writeUint64(offset));
+  }
+}
+
+@Type(BOX_TYPE_SAMPLE_DEPENDENCY_TYPE_BOX)
+export class SampleDependencyTypeBoxBuilder extends FullBoxBuilder {
+  constructor(box: ISampleDependencyTypeBox) {
+    super(box);
+    box.samples.forEach(sample => {
+      this.skipBits(2);
+      this.writeBits(sample.sampleDependsOn, 2);
+      this.writeBits(sample.sampleIsDependedOn, 2);
+      this.writeBits(sample.sampleHasRedundancy, 2);
+    });
   }
 }
 

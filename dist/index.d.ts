@@ -55,6 +55,7 @@ export declare const Mp4: {
         SampleToChunkBoxBuilder: typeof boxBuilders.SampleToChunkBoxBuilder;
         ChunkOffsetBoxBuilder: typeof boxBuilders.ChunkOffsetBoxBuilder;
         ChunkOffset64BoxBuilder: typeof boxBuilders.ChunkOffset64BoxBuilder;
+        SampleDependencyTypeBoxBuilder: typeof boxBuilders.SampleDependencyTypeBoxBuilder;
     };
     Parser: {
         getDescriptorInfo: (bytes: Uint8Array, offset?: number) => import("../../../../../Users/ukyo/work/mp4.js/src/interface.descr").IDescriptor;

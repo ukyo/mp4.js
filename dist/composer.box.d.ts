@@ -1,5 +1,5 @@
 import { DescriptorBuilderMixin } from "./composer.descr";
-import { IFullBox, IFileTypeBox, IMediaDataBox, IMovieHeaderBox, ITrackHeaderBox, ITrackReferenceTypeBox, IMediaHeaderBox, IHandlerBox, IVideoMediaHeaderBox, ISoundMediaHeaderBox, IHintMediaHeaderBox, IDataEntryUrlBox, IDataEntryUrnBox, IDataReferenceBox, ITimeToSampleBox, ICompositionOffsetBox, ISampleEntry, IHintSampleEntry, IVisualSampleEntry, IMP4VisualSampleEntry, IESDBox, IAudioSampleEntry, IMP4AudioSampleEntry, ISampleDescriptionBox, ISampleSizeBox, ISampleToChunkBox, IChunkOffsetBox } from "./interface.box";
+import { IFullBox, IFileTypeBox, IMediaDataBox, IMovieHeaderBox, ITrackHeaderBox, ITrackReferenceTypeBox, IMediaHeaderBox, IHandlerBox, IVideoMediaHeaderBox, ISoundMediaHeaderBox, IHintMediaHeaderBox, IDataEntryUrlBox, IDataEntryUrnBox, IDataReferenceBox, ITimeToSampleBox, ICompositionOffsetBox, ISampleEntry, IHintSampleEntry, IVisualSampleEntry, IMP4VisualSampleEntry, IESDBox, IAudioSampleEntry, IMP4AudioSampleEntry, ISampleDescriptionBox, ISampleSizeBox, ISampleToChunkBox, IChunkOffsetBox, ISampleDependencyTypeBox } from "./interface.box";
 export declare class BoxBuilder extends DescriptorBuilderMixin {
     constructor();
     build(): Uint8Array;
@@ -112,4 +112,7 @@ export declare class ChunkOffsetBoxBuilder extends FullBoxBuilder {
 }
 export declare class ChunkOffset64BoxBuilder extends FullBoxBuilder {
     constructor(box: IChunkOffsetBox);
+}
+export declare class SampleDependencyTypeBoxBuilder extends FullBoxBuilder {
+    constructor(box: ISampleDependencyTypeBox);
 }

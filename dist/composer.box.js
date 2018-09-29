@@ -481,6 +481,21 @@ ChunkOffset64BoxBuilder = __decorate([
     Type(statics_1.BOX_TYPE_CHUNK_OFFSET64_BOX)
 ], ChunkOffset64BoxBuilder);
 exports.ChunkOffset64BoxBuilder = ChunkOffset64BoxBuilder;
+let SampleDependencyTypeBoxBuilder = class SampleDependencyTypeBoxBuilder extends FullBoxBuilder {
+    constructor(box) {
+        super(box);
+        box.samples.forEach(sample => {
+            this.skipBits(2);
+            this.writeBits(sample.sampleDependsOn, 2);
+            this.writeBits(sample.sampleIsDependedOn, 2);
+            this.writeBits(sample.sampleHasRedundancy, 2);
+        });
+    }
+};
+SampleDependencyTypeBoxBuilder = __decorate([
+    Type(statics_1.BOX_TYPE_SAMPLE_DEPENDENCY_TYPE_BOX)
+], SampleDependencyTypeBoxBuilder);
+exports.SampleDependencyTypeBoxBuilder = SampleDependencyTypeBoxBuilder;
 var createBoxBuilder = (box) => {
     return new (dict[box.type] || BoxBuilder)(box);
 };
